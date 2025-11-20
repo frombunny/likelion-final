@@ -1,6 +1,6 @@
 package com.likelion.last.domain.document.entity;
 
-import com.likelion.last.domain.document.entity.enums.Type;
+import com.likelion.last.domain.document.entity.enums.DocumentType;
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.global.entity.BaseEntity;
 import jakarta.persistence.Column;
@@ -35,7 +35,7 @@ public class Document extends BaseEntity {
     private String title;
 
     @Enumerated(EnumType.STRING)
-    private Type type;
+    private DocumentType documentType;
 
     @Column(name = "image_url")
     private String imageUrl;

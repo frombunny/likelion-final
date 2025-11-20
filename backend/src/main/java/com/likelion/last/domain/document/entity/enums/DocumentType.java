@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum Type {
+public enum DocumentType {
     CERTIFICATION("수료증"),
     AWARD("상장");
 
