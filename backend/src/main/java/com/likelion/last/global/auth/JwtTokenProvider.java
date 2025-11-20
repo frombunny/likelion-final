@@ -23,10 +23,10 @@ public class JwtTokenProvider {
     private static final int BEARER_TOKEN_START_INDEX = 7;
     private final JwtUserDetailsService jwtDetailsService;
 
-    @Value("${application.security.jwt.secret}")
+    @Value("${security.jwt.secret}")
     private String secretKey;
 
-    @Value("${application.security.jwt.expiration}")
+    @Value("${security.jwt.expiration}")
     private long validityInSeconds;
 
     public String createToken(Long id) {
