@@ -21,7 +21,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Slf4j
 public class GlobalExceptionHandler {
     /***
-     * @Valid, @Validated로 요청 dto 검증 중 필드 제약 조건 불일치 시 발생
+     * @Valid, @Validated로 요청 dto 검증 중 필드 제약 조건이 일치하지 않을 경우
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     private ResponseEntity<ErrorResponse<?>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * RequestPart 누락 시 발생
+     * RequestPart가 누락된 경우
      */
     @ExceptionHandler(MissingServletRequestPartException.class)
     private ResponseEntity<ErrorResponse<?>> handleMissingServletRequestPartException(
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 쿼리 파라미터 누락 시 발생
+     * 쿼리 파라미터가 누락된 경우
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     private ResponseEntity<ErrorResponse<?>> handleMissingServletRequestParameterException(
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 헤더가 누락된 경우 발생
+     * 헤더가 누락된 경우
      */
     @ExceptionHandler(MissingRequestHeaderException.class)
     private ResponseEntity<ErrorResponse<?>> handleMissingRequestHeaderException(MissingRequestHeaderException e) {
@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * @ModelAttribute, @PathVariable, @RequestParam 의 바인딩 Query String, Path Variable, Form-data 등의 검증 오류 시 발생
+     * @ModelAttribute, @PathVariable, @RequestParam 의 바인딩 Query String, Path Variable, Form-data 등의 검증 오류의 경우
      */
     @ExceptionHandler(BindException.class)
     private ResponseEntity<ErrorResponse<?>> handleBindException(BindException e) {
@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 지원하지 않는 HTTP 메소드를 호출할 경우 발생
+     * 지원하지 않는 HTTP 메소드를 호출할 경우
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     private ResponseEntity<ErrorResponse<?>> handleHttpRequestMethodNotSupportedException(
@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * @PathVariable, @RequestParam 등에서 타입 변환에 실패했을 경우 발생 (ENUM, 숫자 타입 등 공통)
+     * @PathVariable, @RequestParam 등에서 타입 변환에 실패했을 경우 (ENUM, 숫자 타입 등 공통)
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     private ResponseEntity<ErrorResponse<?>> handleMethodArgumentTypeMismatchException(
@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 잘못된 엔드포인트를 호출했을 경우 발생
+     * 잘못된 엔드포인트를 호출했을 경우
      */
     @ExceptionHandler(NoHandlerFoundException.class)
     private ResponseEntity<ErrorResponse<?>> handleNoHandlerFoundException(NoHandlerFoundException e) {
@@ -119,7 +119,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 정적 리소스 조차 찾지 못했을 경우 발생
+     * 정적 리소스 조차 찾지 못했을 경우
      */
     @ExceptionHandler(NoResourceFoundException.class)
     private ResponseEntity<ErrorResponse<?>> handleNoResourceFoundException(NoResourceFoundException e) {
@@ -129,12 +129,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * JSON 파싱/역직렬화 실패 시 발생
+     * JSON 파싱/역직렬화 실패할 경우
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     private ResponseEntity<ErrorResponse<?>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         log.error("HttpMessageNotReadableException : {}", e.getMessage(), e);
         ErrorResponse<?> errorResponse = ErrorResponse.from(GlobalErrorResponseCode.INVALID_HTTP_MESSAGE_BODY);
+        return ResponseEntity.status(errorResponse.getHttpStatus()).body(errorResponse);
+    }
+
+    /**
+     * BaseException을 상속받은 예외가 터질 경우
+     */
+    @ExceptionHandler(BaseException.class)
+    private ResponseEntity<ErrorResponse<?>> handleBaseException(BaseException e){
+        log.error("BaseException : {}", e.getMessage(), e);
+        ErrorResponse<?> errorResponse = ErrorResponse.from(e.getBaseResponseCode());
         return ResponseEntity.status(errorResponse.getHttpStatus()).body(errorResponse);
     }
 
