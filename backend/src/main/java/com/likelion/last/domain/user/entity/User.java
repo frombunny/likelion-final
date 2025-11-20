@@ -1,7 +1,7 @@
 package com.likelion.last.domain.user.entity;
 
 import com.likelion.last.domain.user.entity.enums.Part;
-import com.likelion.last.domain.user.entity.enums.Position;
+import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,7 +35,7 @@ public class User extends BaseEntity {
     private Part part;
 
     @Enumerated(EnumType.STRING)
-    private Position position;
+    private Role role;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
