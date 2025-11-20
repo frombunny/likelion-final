@@ -2,6 +2,7 @@ package com.likelion.last.domain.user.entity;
 
 import com.likelion.last.domain.user.entity.enums.Part;
 import com.likelion.last.domain.user.entity.enums.Role;
+import com.likelion.last.domain.user.web.dto.SignUpReq;
 import com.likelion.last.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +41,6 @@ public class User extends BaseEntity {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    @Column(name = "kakao_id")
+    @Column(name = "kakao_id", unique = true)
     private String kakaoId;
 }
