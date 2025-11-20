@@ -142,7 +142,7 @@ public class GlobalExceptionHandler {
      * BaseException을 상속받은 예외가 터질 경우
      */
     @ExceptionHandler(BaseException.class)
-    private ResponseEntity<ErrorResponse<?>> handleBaseException(BaseException e){
+    private ResponseEntity<ErrorResponse<?>> handleBaseException(BaseException e) {
         log.error("BaseException : {}", e.getMessage(), e);
         ErrorResponse<?> errorResponse = ErrorResponse.from(e.getBaseResponseCode());
         return ResponseEntity.status(errorResponse.getHttpStatus()).body(errorResponse);

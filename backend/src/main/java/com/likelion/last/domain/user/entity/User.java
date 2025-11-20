@@ -2,7 +2,6 @@ package com.likelion.last.domain.user.entity;
 
 import com.likelion.last.domain.user.entity.enums.Part;
 import com.likelion.last.domain.user.entity.enums.Role;
-import com.likelion.last.domain.user.web.dto.SignUpReq;
 import com.likelion.last.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
