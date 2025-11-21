@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum Award {
+public enum Sector {
     VITALITY_AWARD("너없인 의미 없는 세상"),
     KINDNESS_AWARD("다정함이 상상 그 이상"),
     CONTRIBUTION_AWARD("수고했어 항상"),

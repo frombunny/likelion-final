@@ -1,7 +1,7 @@
 package com.likelion.last.domain.vote.entity;
 
 import com.likelion.last.domain.user.entity.User;
-import com.likelion.last.domain.vote.entity.enums.Award;
+import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,5 +41,5 @@ public class Vote extends BaseEntity {
     private User target;
 
     @Enumerated(EnumType.STRING)
-    private Award award;
+    private Sector sector;
 }
