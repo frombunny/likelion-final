@@ -27,25 +27,15 @@ public class VoteService {
     public void vote(UserPrincipal user, VoteReq voteReq) {
         User voter = userRepository.getUserById(user.getId());
 
-        Set<Sector> sectors = new HashSet<>();
-        for (VoteReq.VoteItem item : voteReq.voteItems()) {
-            if (!sectors.add(item.sector())) {
-                throw new DuplicateVoteException();
-            }
-        }
+        validateVoteDuplicate(voter, voteReq);
 
         List<Vote> votes = voteReq.voteItems().stream()
                 .flatMap(item -> item.users().stream()
                         .map(targetId -> {
                             User target = userRepository.getUserById(targetId);
 
-                            if (target.equals(voter)) {
-                                throw new SelfVoteNotAllowedException();
-                            }
+                            validateSelfVote(voter, target);
 
-                            if (voteRepository.existsByVoterAndSector(voter, item.sector())) {
-                                throw new DuplicateVoteException();
-                            }
                             return Vote.builder()
                                     .sector(item.sector())
                                     .voter(voter)
@@ -56,5 +46,24 @@ public class VoteService {
                 .toList();
 
         voteRepository.saveAll(votes);
+    }
+
+    private void validateVoteDuplicate(User voter, VoteReq voteReq) {
+        Set<Sector> sectors = new HashSet<>();
+        for (VoteReq.VoteItem item : voteReq.voteItems()) {
+            if (!sectors.add(item.sector())) {
+                throw new DuplicateVoteException();
+            }
+
+            if (voteRepository.existsByVoterAndSector(voter, item.sector())) {
+                throw new DuplicateVoteException();
+            }
+        }
+    }
+
+    private void validateSelfVote(User voter, User target) {
+        if (voter.equals(target)) {
+            throw new SelfVoteNotAllowedException();
+        }
     }
 }
