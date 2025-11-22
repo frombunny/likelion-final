@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
+    List<User> findAllById(List<Long> ids);
+
     List<User> findAllByOrderByRoleAscPartAscNameAsc();
 
     Optional<User> findByKakaoId(String kakaoId);

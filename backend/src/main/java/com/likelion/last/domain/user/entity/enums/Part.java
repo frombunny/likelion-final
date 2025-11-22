@@ -6,10 +6,11 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Part {
-    PLAN("기획"),
-    DESIGN("디자인"),
-    FRONTEND("프론트엔드"),
-    BACKEND("백엔드");
+    PRODUCT_MANAGER("기획", "Product Manger"),
+    DESIGNER("디자인", "Designer"),
+    FRONTEND_DEVELOPER("프론트엔드", "Frontend Developer"),
+    BACKEND_DEVELOPER("백엔드", "Backend Developer");
 
-    private final String name;
+    private final String korTitle;
+    private final String engTitle;
 }
