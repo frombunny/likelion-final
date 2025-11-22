@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,5 +36,11 @@ public class VoteController {
     public ResponseEntity<SuccessResponse<GetWinnersRes>> getWinnersBySector(@RequestParam Sector sector) {
         GetWinnersRes getWinnersRes = voteService.getWinnersBySector(sector);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(getWinnersRes));
+    }
+
+    @PutMapping("/status")
+    public ResponseEntity<SuccessResponse<Void>> changeVoteStatus(@AuthenticationPrincipal UserPrincipal userPrincipal){
+        voteService.changeVoteStatus(userPrincipal);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.empty());
     }
 }

@@ -1,16 +1,20 @@
 package com.likelion.last.domain.vote.service;
 
 import com.likelion.last.domain.user.entity.User;
+import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.domain.vote.entity.Vote;
+import com.likelion.last.domain.vote.entity.VoteStatus;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.exception.DuplicateVoteException;
 import com.likelion.last.domain.vote.exception.SelfVoteNotAllowedException;
 import com.likelion.last.domain.vote.repository.VoteRepository;
 import com.likelion.last.domain.vote.repository.VoteRepository.VoteCountProjection;
+import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
 import com.likelion.last.domain.vote.web.dto.VoteReq;
 import com.likelion.last.global.auth.UserPrincipal;
+import com.likelion.last.global.auth.exception.CanNotAccessException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -21,10 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class VoteService {
 
     private final UserRepository userRepository;
     private final VoteRepository voteRepository;
+    private final VoteStatusRepository voteStatusRepository;
 
     @Transactional
     public void vote(UserPrincipal user, VoteReq voteReq) {
@@ -49,6 +55,18 @@ public class VoteService {
                 .toList();
 
         voteRepository.saveAll(votes);
+    }
+
+    @Transactional
+    public void changeVoteStatus(UserPrincipal userPrincipal){
+        User user = userRepository.getUserById(userPrincipal.getId());
+
+        if(!user.getRole().equals(Role.ROLE_LEADER)){
+            throw new CanNotAccessException();
+        }
+
+        VoteStatus voteStatus = voteStatusRepository.getVoteStatus(1L);
+        voteStatus.changeVoteStatus();
     }
 
     public GetWinnersRes getWinnersBySector(Sector sector) {
