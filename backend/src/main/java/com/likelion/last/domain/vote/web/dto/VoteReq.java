@@ -1,5 +1,7 @@
 package com.likelion.last.domain.vote.web.dto;
 
+import com.likelion.last.domain.user.entity.User;
+import com.likelion.last.domain.vote.entity.Vote;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

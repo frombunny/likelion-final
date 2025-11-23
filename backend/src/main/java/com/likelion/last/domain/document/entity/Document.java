@@ -35,6 +35,7 @@ public class Document extends BaseEntity {
     private String title;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "type")
     private DocumentType documentType;
 
     @Column(name = "image_url")

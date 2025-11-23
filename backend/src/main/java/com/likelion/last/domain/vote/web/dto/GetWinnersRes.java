@@ -9,12 +9,14 @@ public record GetWinnersRes(
         List<GetWinnerDetailRes> winners
 ) {
     public record GetWinnerDetailRes(
+            Long id,
             String name,
             Part part,
             String profileImageUrl
     ) {
         public static GetWinnerDetailRes from(User user) {
             return new GetWinnerDetailRes(
+                    user.getId(),
                     user.getName(),
                     user.getPart(),
                     user.getProfileImageUrl()
