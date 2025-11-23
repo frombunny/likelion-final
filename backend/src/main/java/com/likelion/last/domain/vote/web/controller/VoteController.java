@@ -38,7 +38,7 @@ public class VoteController {
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(getWinnersRes));
     }
 
-    @PutMapping("/status")
+    @PutMapping
     public ResponseEntity<SuccessResponse<Void>> changeVoteStatus(@AuthenticationPrincipal UserPrincipal userPrincipal){
         voteService.changeVoteStatus(userPrincipal);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.empty());

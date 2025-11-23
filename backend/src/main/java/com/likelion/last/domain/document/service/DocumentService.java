@@ -1,6 +1,7 @@
 package com.likelion.last.domain.document.service;
 
 import com.likelion.last.domain.document.entity.Document;
+import com.likelion.last.domain.document.entity.enums.DocumentType;
 import com.likelion.last.domain.document.repository.DocumentRepository;
 import com.likelion.last.domain.document.web.dto.GetAllDocumentsRes;
 import com.likelion.last.domain.user.entity.User;
@@ -11,6 +12,7 @@ import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
 import com.likelion.last.global.auth.UserPrincipal;
+import com.likelion.last.global.external.imageGeneration.service.ImageGenerationService;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final VoteStatusRepository voteStatusRepository;
     private final VoteService voteService;
+    private final ImageGenerationService imageGenerationService;
 
     public GetAllDocumentsRes getDocumentListByUser(UserPrincipal userPrincipal) {
         User user = userRepository.getUserById(userPrincipal.getId());
@@ -48,7 +51,7 @@ public class DocumentService {
 
         winnersWithSectors.forEach((sector, getWinnersRes) ->
                 getWinnersRes.winners().forEach(getWinnerDetailRes ->
-                        createDocument(getWinnerDetailRes.id(), getAwardTemplatePath(sector))
+                        createDocument(getWinnerDetailRes.id(), getAwardTemplatePath(sector), DocumentType.AWARD)
                 )
         );
     }
@@ -60,15 +63,23 @@ public class DocumentService {
         users.forEach(
                 user -> {
                     String templatePath = getCertificateTemplatePath(user);
-                    createDocument(user.getId(), templatePath);
+                    createDocument(user.getId(), templatePath, DocumentType.CERTIFICATION);
                 }
         );
     }
 
-    private void createDocument(Long userId, String path) {
+    private void createDocument(Long userId, String path, DocumentType documentType) {
         User user = userRepository.getUserById(userId);
 
-        // 문서 작성 로직
+        String imageUrl = imageGenerationService.writeOnDocument(path, user.getName(), documentType);
+
+        Document document = Document.builder()
+                .documentType(documentType)
+                .imageUrl(imageUrl)
+                .user(user)
+                .build();
+
+        documentRepository.save(document);
     }
 
     private String getCertificateTemplatePath(User user) {

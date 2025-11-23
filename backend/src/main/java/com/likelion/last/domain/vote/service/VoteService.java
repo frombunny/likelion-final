@@ -1,5 +1,6 @@
 package com.likelion.last.domain.vote.service;
 
+import com.likelion.last.domain.document.service.DocumentService;
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;
@@ -33,6 +34,7 @@ public class VoteService {
     private final UserRepository userRepository;
     private final VoteRepository voteRepository;
     private final VoteStatusRepository voteStatusRepository;
+    private final DocumentService documentService;
 
     @Transactional
     public void vote(UserPrincipal user, VoteReq voteReq) {
@@ -71,6 +73,11 @@ public class VoteService {
 
         VoteStatus voteStatus = voteStatusRepository.getVoteStatus(VOTE_STATUS_ID);
         voteStatus.changeVoteStatus();
+
+        if(!voteStatus.isOpen()){
+            documentService.createAwards();
+            documentService.createCertificates();
+        }
     }
 
     public GetWinnersRes getWinnersBySector(Sector sector) {

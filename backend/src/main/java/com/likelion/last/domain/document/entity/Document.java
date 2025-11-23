@@ -32,8 +32,6 @@ public class Document extends BaseEntity {
     @Column(name = "document_id")
     private Long id;
 
-    private String title;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
     private DocumentType documentType;
