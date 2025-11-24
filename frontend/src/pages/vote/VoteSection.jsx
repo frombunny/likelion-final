@@ -16,7 +16,8 @@ export default function VoteSection() {
       key={id}
       title={section.title}
       description={section.description}
-      nextPath={isLast ? "/vote/wait" : `/vote/${nextId}`}
+      sector={section.sector}
+      nextPath={isLast ? "/vote/complete" : `/vote/${nextId}`}
     />
   );
 }

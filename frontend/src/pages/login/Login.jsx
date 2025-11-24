@@ -24,7 +24,7 @@ export default function Login() {
     axios
       .post(BACKEND_LOGIN_URL, { code })
       .then((res) => {
-        const token = res.data.jwt;
+        const token = res.data.data.token;
         localStorage.setItem("accessToken", token);
         navigate("/");
       })

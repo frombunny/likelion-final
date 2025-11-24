@@ -1,6 +1,7 @@
 package com.likelion.last.domain.user.web.dto;
 
 import com.likelion.last.domain.user.entity.User;
+import com.likelion.last.domain.user.entity.enums.Part;
 import java.util.List;
 
 public record GetAllUserRes(
@@ -10,6 +11,7 @@ public record GetAllUserRes(
     public record GetOneUserRes(
             Long id,
             String name,
+            Part part,
             String profileImageUrl
     ) {
 
@@ -17,6 +19,7 @@ public record GetAllUserRes(
             return new GetOneUserRes(
                     user.getId(),
                     user.getName(),
+                    user.getPart(),
                     user.getProfileImageUrl()
             );
         }

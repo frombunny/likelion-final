@@ -1,26 +1,34 @@
 import styled from "styled-components";
 import BasicButton from "../../shared/BasicButton";
 import checkIcon from "../../assets/vote/checkIcon.svg";
-import sampleImage from "../../assets/vote/testImg.png";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate, useLocation } from "react-router-dom";
 
-export default function VoteMain({ title, description, nextPath }) {
+export default function VoteMain({ title, description, nextPath, sector }) {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState([]);
+  const location = useLocation();
 
-  const candidates = [
-    { id: 1, name: "권기남", img: sampleImage },
-    { id: 2, name: "권기남", img: sampleImage },
-    { id: 3, name: "권기남", img: sampleImage },
-    { id: 4, name: "권기남", img: sampleImage },
-    { id: 5, name: "권기남", img: sampleImage },
-    { id: 6, name: "권기남", img: sampleImage },
-    { id: 7, name: "권기남", img: sampleImage },
-    { id: 8, name: "권기남", img: sampleImage },
-    { id: 9, name: "권기남", img: sampleImage },
-    { id: 10, name: "권기남", img: sampleImage },
-  ];
+  const [selected, setSelected] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const USER_LIST_API = import.meta.env.VITE_BACKEND_USER_LIST_URL;
+  const VOTE_API = import.meta.env.VITE_BACKEND_VOTE_URL;
+
+  const prevVotes = location.state?.prevVotes || [];
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+
+    axios
+      .get(USER_LIST_API, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setCandidates(res.data.data.users))
+      .catch(() => alert("후보를 불러오지 못했습니다."))
+      .finally(() => setLoading(false));
+  }, []);
 
   const toggleSelect = (id) => {
     if (selected.includes(id)) {
@@ -29,6 +37,37 @@ export default function VoteMain({ title, description, nextPath }) {
       setSelected([...selected, id]);
     }
   };
+
+  const handleNext = () => {
+    const currentVote = {
+      sector: sector,
+      users: selected,
+    };
+
+    const updatedVotes = [...prevVotes, currentVote];
+
+    if (nextPath === "/vote/complete") {
+      const token = localStorage.getItem("accessToken");
+
+      axios
+        .post(
+          VOTE_API,
+          { voteItems: updatedVotes },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then(() => navigate("/vote/complete"))
+        .catch((err) => {
+          console.error(err);
+          alert("투표 제출 중 오류가 발생했습니다.");
+        });
+
+      return;
+    }
+
+    navigate(nextPath, { state: { prevVotes: updatedVotes } });
+  };
+
+  if (loading) return <Wrapper>불러오는 중...</Wrapper>;
 
   return (
     <Wrapper>
@@ -42,7 +81,7 @@ export default function VoteMain({ title, description, nextPath }) {
             onClick={() => toggleSelect(c.id)}
             disabled={!selected.includes(c.id) && selected.length >= 2}
           >
-            <Image src={c.img} alt={c.name} />
+            <Image src={c.profileImageUrl} alt={c.name} />
 
             {selected.includes(c.id) && (
               <SelectedOverlay>
@@ -60,13 +99,12 @@ export default function VoteMain({ title, description, nextPath }) {
         <BasicButton
           text="다음"
           disabled={selected.length !== 2}
-          onClick={() => navigate(nextPath, { state: { selected } })}
+          onClick={handleNext}
         />
       </FixedButton>
     </Wrapper>
   );
 }
-
 
 const Wrapper = styled.div`
   padding: 24px 20px;
@@ -137,17 +175,12 @@ const CheckIcon = styled.img`
 const FixedButton = styled.div`
   position: fixed;
   bottom: 24px;
-
-  /* AppContainer 중앙 정렬 대응 */
   left: 50%;
   transform: translateX(-50%);
-
   width: 100%;
   max-width: 420px;
-
   padding: 0 20px;
   display: flex;
   justify-content: center;
-
   z-index: 100;
 `;
