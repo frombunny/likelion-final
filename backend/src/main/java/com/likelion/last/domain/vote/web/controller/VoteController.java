@@ -43,8 +43,6 @@ public class VoteController {
     @PutMapping
     public ResponseEntity<SuccessResponse<Void>> changeVoteStatus(@AuthenticationPrincipal UserPrincipal userPrincipal){
         voteService.changeVoteStatus(userPrincipal);
-        documentService.createCertificates();
-        documentService.createAwards();
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.empty());
     }
 }

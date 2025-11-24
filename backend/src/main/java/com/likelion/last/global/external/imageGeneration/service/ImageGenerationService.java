@@ -25,9 +25,16 @@ public class ImageGenerationService {
 
     public String writeOnDocument(String templatePath, String username, DocumentType documentType) {
         try {
+            ClassPathResource resource = new ClassPathResource(templatePath);
+            System.out.println("exists? " + resource.exists());
+            System.out.println("url: " + resource.getURL());
+
+            System.out.println("시작");
             BufferedImage bufferedImage = ImageIO.read(
                     new ClassPathResource(templatePath).getInputStream()
             );
+
+            System.out.println("이미지 로드");
 
             Graphics2D graphics2D = bufferedImage.createGraphics();
             applyQuality(graphics2D);
@@ -36,16 +43,19 @@ public class ImageGenerationService {
             graphics2D.setFont(font);
             graphics2D.setColor(Color.BLACK);
 
+            System.out.println("폰트 로드");
+
             int x = 5100;
             int y = 3040;
 
             graphics2D.drawString(username, x, y);
             graphics2D.dispose();
+            System.out.println("그리기");
 
             String localPath = "/tmp/" + System.currentTimeMillis() + ".jpg";
             File outputFile = new File(localPath);
-
             ImageIO.write(bufferedImage, "jpg", outputFile);
+            System.out.println("로컬에 저장");
 
             if (!outputFile.exists()) {
                 throw new FileNotCreatedException();

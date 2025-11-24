@@ -12,7 +12,8 @@ export default function RootLayout() {
   const showMenubar =
     pathname.startsWith("/vote") ||
     pathname.startsWith("/award") ||
-    pathname.startsWith("/Certificate");
+    pathname.startsWith("/Certificate") ||
+    pathname.startsWith("/certificate") ;
 
   return (
     <AppLayout header={hideHeader ? null : <Header showMenubar={showMenubar} />}>

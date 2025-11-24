@@ -5,6 +5,7 @@ import com.likelion.last.domain.document.entity.enums.DocumentType;
 import com.likelion.last.domain.document.repository.DocumentRepository;
 import com.likelion.last.domain.document.web.dto.GetAllDocumentsRes;
 import com.likelion.last.domain.user.entity.User;
+import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.exception.VoteProgressException;
@@ -71,6 +72,7 @@ public class DocumentService {
     private void createDocument(Long userId, String path, DocumentType documentType) {
         User user = userRepository.getUserById(userId);
 
+        System.out.println(path);
         String imageUrl = imageGenerationService.writeOnDocument(path, user.getName(), documentType);
 
         Document document = Document.builder()
@@ -85,18 +87,24 @@ public class DocumentService {
     private String getCertificateTemplatePath(User user) {
         String part = user.getPart().toString();
         String role = user.getRole().getPureName();
+        if(user.getRole().equals(Role.ROLE_LEADER) || user.getRole().equals(Role.ROLE_SUB_LEADER)){
+            return String.format(
+                    "static/document/certificate/%s.jpg",
+                    role
+            );
+        }
 
         return String.format(
-                "templates/document/certificate/%s_%s.jpg",
-                role,
-                part
+                "static/document/certificate/%s_%s.jpg",
+                part,
+                role
         );
     }
 
     private String getAwardTemplatePath(Sector sector) {
-        String sectorName = sector.getName();
+        String sectorName = sector.name();
         return String.format(
-                "templates/document/award/%s.jpg",
+                "static/document/award/%s.jpg",
                 sectorName
         );
     }
