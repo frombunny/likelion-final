@@ -2,12 +2,40 @@ import React from "react";
 import styled from "styled-components";
 import bgImage from "../../assets/login/loginBg.svg";
 import loginButton from "../../assets/login/kakaoLoginButton.png";
+import { useEffect } from "react";
+import axios from "axios";
 
-export default function Login(){
-    return <LoginWrapper>
-        <LoginButton/>
-    </LoginWrapper>;
+export default function Login() {
+  const REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API;
+  const REDIRECT_URI = "http://localhost:5173/login";
+
+  const handleLogin = () => {
+    window.location.href =
+      `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}`;
+  };
+
+  useEffect(() => {
+    const code = new URL(window.location.href).searchParams.get("code");
+
+    if (code) {
+      axios
+        .post("https://your-backend.com/auth/login", { code })
+        .then(res => {
+          const token = res.data.jwt;
+          localStorage.setItem("accessToken", token);
+          window.location.href = "/"; // 홈으로 이동
+        })
+        .catch(err => console.log("로그인 에러:", err));
+    }
+  }, []);
+
+  return (
+    <LoginWrapper>
+      <LoginButton onClick={handleLogin} />
+    </LoginWrapper>
+  );
 }
+
 
 const LoginWrapper = styled.div`
   width: 100%;
