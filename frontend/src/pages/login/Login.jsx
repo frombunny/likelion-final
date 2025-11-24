@@ -1,32 +1,49 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import bgImage from "../../assets/login/loginBg.svg";
 import loginButton from "../../assets/login/kakaoLoginButton.png";
-import { useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API;
-  const REDIRECT_URI = "http://localhost:5173/login";
+  const navigate = useNavigate();
+
+  const CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID;
+  const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+  const BACKEND_LOGIN_URL = import.meta.env.VITE_BACKEND_LOGIN_URL;
 
   const handleLogin = () => {
-    window.location.href =
-      `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}`;
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
   };
 
   useEffect(() => {
     const code = new URL(window.location.href).searchParams.get("code");
 
-    if (code) {
-      axios
-        .post("https://your-backend.com/auth/login", { code })
-        .then(res => {
-          const token = res.data.jwt;
-          localStorage.setItem("accessToken", token);
-          window.location.href = "/"; // 홈으로 이동
-        })
-        .catch(err => console.log("로그인 에러:", err));
-    }
+    if (!code) return;
+
+    axios
+      .post(BACKEND_LOGIN_URL, { code })
+      .then((res) => {
+        const token = res.data.jwt;
+        localStorage.setItem("accessToken", token);
+        navigate("/");
+      })
+      .catch((err) => {
+        const errorCode = err.response?.data?.code;
+
+        if (errorCode === "USER_NOT_FOUND_404") {
+          const kakaoInfo = err.response.data.data.kakaoInfo;
+
+          navigate("/signUp", {
+            state: {
+              kakaoInfo: kakaoInfo,
+            },
+          });
+          return;
+        }
+
+        console.error("로그인 에러:", err);
+      });
   }, []);
 
   return (
@@ -35,7 +52,6 @@ export default function Login() {
     </LoginWrapper>
   );
 }
-
 
 const LoginWrapper = styled.div`
   width: 100%;

@@ -10,7 +10,7 @@ public record SignUpReq(
         @NotBlank(message = "이름은 필수 값입니다.") String name,
         @NotNull(message = "파트는 필수 값입니다.") Part part,
         @NotNull(message = "역할은 필수 값입니다.") Role role,
-        @NotBlank(message = "카카오 아이디는 필수 값입니다.") Long kakaoId,
+        @NotNull(message = "카카오 아이디는 필수 값입니다.") Long kakaoId,
         String profileImageUrl
 ) {
     public User toEntity() {

@@ -13,10 +13,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByKakaoId(Long kakaoId);
 
-    default User getUserByKakaoId(Long kakaoId) {
-        return findByKakaoId(kakaoId).orElseThrow(UserNotFoundException::new);
-    }
-
     default User getUserById(Long id) {
         return findById(id).orElseThrow(UserNotFoundException::new);
     }

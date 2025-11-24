@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -26,27 +27,32 @@ public class KakaoService {
     public final RestTemplate restTemplate = new RestTemplate();
 
     public KakaoTokenRes getAccessTokenFromKakao(String code) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        try {
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "authorization_code");
-        params.add("client_id", clientId);
-        params.add("redirect_uri", redirectUri);
-        params.add("code", code);
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("grant_type", "authorization_code");
+            params.add("client_id", clientId);
+            params.add("redirect_uri", redirectUri);
+            params.add("code", code);
 
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, httpHeaders);
-        ResponseEntity<KakaoTokenRes> response = restTemplate.postForEntity(
-                "https://kauth.kakao.com/oauth/token",
-                request,
-                KakaoTokenRes.class
-        );
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, httpHeaders);
+            ResponseEntity<KakaoTokenRes> response = restTemplate.postForEntity(
+                    "https://kauth.kakao.com/oauth/token",
+                    request,
+                    KakaoTokenRes.class
+            );
 
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new KakaoLoginFailedException();
+            }
+
+            return response.getBody();
+        } catch (HttpClientErrorException e) {
+            System.out.println("카카오 응답: " + e.getResponseBodyAsString());
             throw new KakaoLoginFailedException();
         }
-
-        return response.getBody();
     }
 
     public KakaoUserInfoRes getKakaoUserInfo(String accessToken) {

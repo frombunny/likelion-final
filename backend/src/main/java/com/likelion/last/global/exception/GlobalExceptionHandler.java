@@ -1,7 +1,11 @@
 package com.likelion.last.global.exception;
 
+import static com.fasterxml.jackson.databind.type.LogicalType.Map;
+
+import com.likelion.last.domain.user.exception.UserNotFoundException;
 import com.likelion.last.global.response.ErrorResponse;
 import com.likelion.last.global.response.code.GlobalErrorResponseCode;
+import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -137,6 +141,24 @@ public class GlobalExceptionHandler {
         ErrorResponse<?> errorResponse = ErrorResponse.from(GlobalErrorResponseCode.INVALID_HTTP_MESSAGE_BODY);
         return ResponseEntity.status(errorResponse.getHttpStatus()).body(errorResponse);
     }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ErrorResponse<?>> handleUserNotFound(UserNotFoundException e) {
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("kakaoInfo", e.getKakaoInfo());
+
+        ErrorResponse<?> errorResponse = ErrorResponse.of(
+                data,
+                e.getBaseResponseCode(),
+                e.getBaseResponseCode().getMessage()
+        );
+
+        return ResponseEntity
+                .status(e.getBaseResponseCode().getHttpStatus())
+                .body(errorResponse);
+    }
+
 
     /**
      * BaseException을 상속받은 예외가 터질 경우

@@ -3,6 +3,7 @@ import RootLayout from "../styles/layouts/RootLayout";
 
 import Home from "../pages/home/Home";
 import Login from "../pages/login/Login";
+import SignUpPage from "../pages/signUp/SignUpPage";
 import Vote from "../pages/vote/Vote";
 import CertificatePage from "../pages/certificate/CertificatePage";
 
@@ -24,23 +25,25 @@ export const router = createBrowserRouter([
 
       { path: "signUp", element: <SelectPart /> },
       { path: "signUp/role", element: <SelectRole /> },
+      { path: "signUp/part", element: <SelectPart /> },
+      { path: "signUp/info", element: <SignUpPage /> },
 
       { path: "vote", element: <Vote /> },
       { path: "vote/main", element: <VoteMain /> },
       { path: "vote/:id", element: <VoteSection /> },
       { path: "vote/complete", element: <VoteComplete /> },
+      { path: "/signUp/info", element: <SignUpPage /> },
 
       {
         path: "award",
         children: [
           { index: true, element: <RedirectToFirstAward /> },
 
-          { path: ":id", element: <AwardSectionPage /> }
+          { path: ":id", element: <AwardSectionPage /> },
         ],
       },
 
       { path: "certificate", element: <CertificatePage /> },
-
     ],
   },
 ]);

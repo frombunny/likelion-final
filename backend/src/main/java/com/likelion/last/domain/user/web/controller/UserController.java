@@ -5,6 +5,9 @@ import com.likelion.last.domain.user.web.dto.GetAllUserRes;
 import com.likelion.last.domain.user.web.dto.LoginReq;
 import com.likelion.last.domain.user.web.dto.LoginRes;
 import com.likelion.last.domain.user.web.dto.SignUpReq;
+import com.likelion.last.global.auth.oauth2.dto.KakaoTokenRes;
+import com.likelion.last.global.auth.oauth2.dto.KakaoUserInfoRes;
+import com.likelion.last.global.auth.oauth2.service.KakaoService;
 import com.likelion.last.global.response.SuccessResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final KakaoService kakaoService;
 
     @PostMapping
     public ResponseEntity<SuccessResponse<Void>> signUp(@Valid @RequestBody SignUpReq signUpReq) {
