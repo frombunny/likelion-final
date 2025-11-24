@@ -9,14 +9,12 @@ public record GetAllDocumentsRes(
 ) {
     public record GetOneDocumentRes(
             Long id,
-            String title,
             DocumentType documentType,
             String imageUrl
     ) {
         public static GetOneDocumentRes from(Document document) {
             return new GetOneDocumentRes(
                     document.getId(),
-                    document.getTitle(),
                     document.getDocumentType(),
                     document.getImageUrl()
             );

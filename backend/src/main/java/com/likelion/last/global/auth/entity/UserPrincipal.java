@@ -1,4 +1,4 @@
-package com.likelion.last.global.auth;
+package com.likelion.last.global.auth.entity;
 
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.entity.enums.Role;
@@ -12,7 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @Getter
 public class UserPrincipal implements UserDetails {
     private final Long id;
-    private final String kakaoId;
+    private final Long kakaoId;
     private final Role role;
 
     public UserPrincipal(User user) {

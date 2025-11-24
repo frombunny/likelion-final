@@ -2,7 +2,7 @@ package com.likelion.last.domain.document.web.controller;
 
 import com.likelion.last.domain.document.service.DocumentService;
 import com.likelion.last.domain.document.web.dto.GetAllDocumentsRes;
-import com.likelion.last.global.auth.UserPrincipal;
+import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.response.SuccessResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

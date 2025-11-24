@@ -2,6 +2,8 @@ package com.likelion.last.domain.user.web.controller;
 
 import com.likelion.last.domain.user.service.UserService;
 import com.likelion.last.domain.user.web.dto.GetAllUserRes;
+import com.likelion.last.domain.user.web.dto.LoginReq;
+import com.likelion.last.domain.user.web.dto.LoginRes;
 import com.likelion.last.domain.user.web.dto.SignUpReq;
 import com.likelion.last.global.response.SuccessResponse;
 import jakarta.validation.Valid;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,4 +34,11 @@ public class UserController {
         GetAllUserRes getAllUserRes = userService.getAllUsers();
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(getAllUserRes));
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<SuccessResponse<LoginRes>> login(@Valid @RequestBody LoginReq loginReq){
+        LoginRes loginRes = userService.login(loginReq);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(loginRes));
+    }
+
 }

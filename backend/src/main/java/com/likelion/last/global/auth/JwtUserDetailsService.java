@@ -3,6 +3,7 @@ package com.likelion.last.global.auth;
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.exception.UserNotFoundException;
 import com.likelion.last.domain.user.repository.UserRepository;
+import com.likelion.last.global.auth.entity.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

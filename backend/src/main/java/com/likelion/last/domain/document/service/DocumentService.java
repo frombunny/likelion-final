@@ -11,7 +11,7 @@ import com.likelion.last.domain.vote.exception.VoteProgressException;
 import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
-import com.likelion.last.global.auth.UserPrincipal;
+import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.external.imageGeneration.service.ImageGenerationService;
 import java.util.Arrays;
 import java.util.List;

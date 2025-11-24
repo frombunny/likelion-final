@@ -1,10 +1,11 @@
 package com.likelion.last.domain.vote.web.controller;
 
+import com.likelion.last.domain.document.service.DocumentService;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
 import com.likelion.last.domain.vote.web.dto.VoteReq;
-import com.likelion.last.global.auth.UserPrincipal;
+import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.response.SuccessResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class VoteController {
     private final VoteService voteService;
+    private final DocumentService documentService;
 
     @PostMapping
     public ResponseEntity<SuccessResponse<?>> vote(@AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -41,6 +43,8 @@ public class VoteController {
     @PutMapping
     public ResponseEntity<SuccessResponse<Void>> changeVoteStatus(@AuthenticationPrincipal UserPrincipal userPrincipal){
         voteService.changeVoteStatus(userPrincipal);
+        documentService.createCertificates();
+        documentService.createAwards();
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.empty());
     }
 }

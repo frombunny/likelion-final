@@ -9,13 +9,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    List<User> findAllById(List<Long> ids);
-
     List<User> findAllByOrderByRoleAscPartAscNameAsc();
 
-    Optional<User> findByKakaoId(String kakaoId);
+    Optional<User> findByKakaoId(Long kakaoId);
 
-    default User getUserByKakaoId(String kakaoId) {
+    default User getUserByKakaoId(Long kakaoId) {
         return findByKakaoId(kakaoId).orElseThrow(UserNotFoundException::new);
     }
 

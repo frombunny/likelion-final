@@ -41,5 +41,5 @@ public class User extends BaseEntity {
     private String profileImageUrl;
 
     @Column(name = "kakao_id", unique = true)
-    private String kakaoId;
+    private Long kakaoId;
 }

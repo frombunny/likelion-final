@@ -16,7 +16,7 @@ import com.likelion.last.domain.vote.repository.VoteRepository.VoteCountProjecti
 import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
 import com.likelion.last.domain.vote.web.dto.VoteReq;
-import com.likelion.last.global.auth.UserPrincipal;
+import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.auth.exception.CanNotAccessException;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +34,6 @@ public class VoteService {
     private final UserRepository userRepository;
     private final VoteRepository voteRepository;
     private final VoteStatusRepository voteStatusRepository;
-    private final DocumentService documentService;
 
     @Transactional
     public void vote(UserPrincipal user, VoteReq voteReq) {
@@ -73,11 +72,6 @@ public class VoteService {
 
         VoteStatus voteStatus = voteStatusRepository.getVoteStatus(VOTE_STATUS_ID);
         voteStatus.changeVoteStatus();
-
-        if(!voteStatus.isOpen()){
-            documentService.createAwards();
-            documentService.createCertificates();
-        }
     }
 
     public GetWinnersRes getWinnersBySector(Sector sector) {
