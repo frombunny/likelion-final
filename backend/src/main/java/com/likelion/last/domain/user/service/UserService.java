@@ -48,7 +48,6 @@ public class UserService {
 
     public GetAllUserRes getAllUsers() {
         List<User> users = userRepository.findAllByOrderByRoleAscPartAscNameAsc();
-
         return GetAllUserRes.from(users);
     }
 }

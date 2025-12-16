@@ -8,7 +8,6 @@ import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.domain.vote.entity.enums.Sector;
-import com.likelion.last.domain.vote.exception.VoteProgressException;
 import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
@@ -26,11 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DocumentService {
-    private static final Long VOTE_STATUS_ID = 1L;
-
     private final UserRepository userRepository;
     private final DocumentRepository documentRepository;
-    private final VoteStatusRepository voteStatusRepository;
     private final VoteService voteService;
     private final ImageGenerationService imageGenerationService;
 

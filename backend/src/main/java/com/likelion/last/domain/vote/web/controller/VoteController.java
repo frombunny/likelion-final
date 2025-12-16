@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class VoteController {
     private final VoteService voteService;
-    private final DocumentService documentService;
 
     @PostMapping
     public ResponseEntity<SuccessResponse<?>> vote(@AuthenticationPrincipal UserPrincipal userPrincipal,

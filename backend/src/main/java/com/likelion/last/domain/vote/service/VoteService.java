@@ -1,6 +1,5 @@
 package com.likelion.last.domain.vote.service;
 
-import com.likelion.last.domain.document.service.DocumentService;
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;

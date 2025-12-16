@@ -10,7 +10,6 @@ public class UserNotFoundException extends BaseException {
         super(UserErrorCode.USER_NOT_FOUND_404);
     }
 
-
     public UserNotFoundException(KakaoUserInfoRes kakaoUserInfoRes) {
         super(UserErrorCode.USER_NOT_FOUND_404);
         this.kakaoUserInfoRes = kakaoUserInfoRes;
