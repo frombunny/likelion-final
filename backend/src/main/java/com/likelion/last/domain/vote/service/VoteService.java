@@ -74,6 +74,12 @@ public class VoteService {
         voteStatus.changeVoteStatus();
     }
 
+    public void validateVoteIsClosed(){
+        if (voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()){
+            throw new VoteProgressException();
+        }
+    }
+
     public GetWinnersRes getWinnersBySector(Sector sector) {
         validateVoteIsClosed();
         List<VoteRepository.VoteCountProjection> votesCountPerUser = voteRepository.findBySectorWithVoteCount(sector);
@@ -110,12 +116,6 @@ public class VoteService {
     private void validateVoteIsOpened() {
         if(!voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()){
             throw new VoteClosedException();
-        }
-    }
-
-    private void validateVoteIsClosed(){
-        if (voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()){
-            throw new VoteProgressException();
         }
     }
 

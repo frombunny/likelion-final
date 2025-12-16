@@ -43,7 +43,7 @@ public class DocumentService {
 
     @Transactional
     public void createAwards() {
-        validateVoteIsClosed();
+        voteService.validateVoteIsClosed();
         Map<Sector, GetWinnersRes> winnersWithSectors = Arrays.stream(Sector.values())
                 .collect(Collectors.toMap(
                         sector -> sector,
@@ -107,11 +107,5 @@ public class DocumentService {
                 "static/document/award/%s.jpg",
                 sectorName
         );
-    }
-
-    private void validateVoteIsClosed() {
-        if (voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()) {
-            throw new VoteProgressException();
-        }
     }
 }
