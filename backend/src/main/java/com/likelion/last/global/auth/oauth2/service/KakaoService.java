@@ -1,21 +1,20 @@
 package com.likelion.last.global.auth.oauth2.service;
 
-import com.likelion.last.global.auth.exception.KakaoLoginFailedException;
+import com.likelion.last.global.auth.exception.KakaoAuthFailedException;
 import com.likelion.last.global.auth.oauth2.dto.KakaoTokenRes;
 import com.likelion.last.global.auth.oauth2.dto.KakaoUserInfoRes;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class KakaoService {
     @Value("${oauth.kakao.client-id}")
@@ -24,54 +23,49 @@ public class KakaoService {
     @Value("${oauth.kakao.redirect-uri}")
     private String redirectUri;
 
-    public final RestTemplate restTemplate = new RestTemplate();
+    private final WebClient webClient;
 
     public KakaoTokenRes getAccessTokenFromKakao(String code) {
         try {
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("grant_type", "authorization_code");
             params.add("client_id", clientId);
             params.add("redirect_uri", redirectUri);
             params.add("code", code);
 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, httpHeaders);
-            ResponseEntity<KakaoTokenRes> response = restTemplate.postForEntity(
-                    "https://kauth.kakao.com/oauth/token",
-                    request,
-                    KakaoTokenRes.class
-            );
+            return webClient.post()
+                    .uri("https://kauth.kakao.com/oauth/token")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .bodyValue(params)
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            response -> response.createException()
+                    )
+                    .bodyToMono(KakaoTokenRes.class)
+                    .block();
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new KakaoLoginFailedException();
-            }
-
-            return response.getBody();
-        } catch (HttpClientErrorException e) {
-            System.out.println("카카오 응답: " + e.getResponseBodyAsString());
-            throw new KakaoLoginFailedException();
+        } catch (Exception e) {
+            log.warn("Kakao OAuth token request failed", e);
+            throw new KakaoAuthFailedException();
         }
     }
 
     public KakaoUserInfoRes getKakaoUserInfo(String accessToken) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.setBearerAuth(accessToken);
-        httpHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        HttpEntity<Void> request = new HttpEntity<>(httpHeaders);
-
-        ResponseEntity<KakaoUserInfoRes> response = restTemplate.postForEntity(
-                "https://kapi.kakao.com/v2/user/me",
-                request,
-                KakaoUserInfoRes.class
-        );
-
-        if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-            throw new KakaoLoginFailedException();
+        try {
+            return webClient.post()
+                    .uri("https://kapi.kakao.com/v2/user/me")
+                    .headers(headers -> headers.setBearerAuth(accessToken))
+                    .retrieve()
+                    .onStatus(
+                            HttpStatusCode::isError,
+                            response -> response.createException()
+                    )
+                    .bodyToMono(KakaoUserInfoRes.class)
+                    .block();
+        } catch (Exception e) {
+            log.warn("Kakao user info request failed", e);
+            throw new KakaoAuthFailedException();
         }
-
-        return response.getBody();
     }
 }
