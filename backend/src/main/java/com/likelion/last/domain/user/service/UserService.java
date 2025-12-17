@@ -13,6 +13,7 @@ import com.likelion.last.global.auth.oauth2.service.KakaoService;
 import com.likelion.last.global.auth.oauth2.dto.KakaoTokenRes;
 import com.likelion.last.global.auth.oauth2.dto.KakaoUserInfoRes;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,11 +40,13 @@ public class UserService {
         KakaoTokenRes kakaoTokenRes = kakaoService.getAccessTokenFromKakao(loginReq.code());
         KakaoUserInfoRes kakaoUserInfoRes = kakaoService.getKakaoUserInfo(kakaoTokenRes.accessToken());
 
-        User user = userRepository.findByKakaoId(kakaoUserInfoRes.id())
-                .orElseThrow(() -> new UserNotFoundException(kakaoUserInfoRes));
+        Optional<User> user = userRepository.findByKakaoId(kakaoUserInfoRes.id());
+        if(user.isEmpty()){
+            return LoginRes.signUpRequired(kakaoUserInfoRes);
+        }
 
-        String jwt = jwtTokenProvider.createToken(user.getId());
-        return LoginRes.from(jwt);
+        String jwt = jwtTokenProvider.createToken(user.get().getId());
+        return LoginRes.success(jwt);
     }
 
     public GetAllUserRes getAllUsers() {
