@@ -14,11 +14,13 @@ public class UserPrincipal implements UserDetails {
     private final Long id;
     private final Long kakaoId;
     private final Role role;
+    private final String profileImageUrl;
 
     public UserPrincipal(User user) {
         this.id = user.getId();
         this.kakaoId = user.getKakaoId();
         this.role = user.getRole();
+        this.profileImageUrl = user.getProfileImageUrl();
     }
 
     @Override
