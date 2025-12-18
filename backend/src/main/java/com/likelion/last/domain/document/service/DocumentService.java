@@ -9,7 +9,6 @@ import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.service.VoteService;
-import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.external.imageGeneration.service.ImageGenerationService;
 import java.util.Arrays;
