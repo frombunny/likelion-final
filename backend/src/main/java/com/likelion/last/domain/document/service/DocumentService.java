@@ -8,7 +8,6 @@ import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.entity.enums.Role;
 import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.domain.vote.entity.enums.Sector;
-import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
 import com.likelion.last.global.auth.entity.UserPrincipal;
@@ -40,16 +39,15 @@ public class DocumentService {
     @Transactional
     public void createAwards() {
         voteService.validateVoteIsClosed();
-        Map<Sector, GetWinnersRes> winnersWithSectors = Arrays.stream(Sector.values())
-                .collect(Collectors.toMap(
-                        sector -> sector,
-                        voteService::getWinnersBySector
-                ));
 
-        winnersWithSectors.forEach((sector, getWinnersRes) ->
-                getWinnersRes.winners().forEach(getWinnerDetailRes ->
-                        createDocument(getWinnerDetailRes.id(), getAwardTemplatePath(sector), DocumentType.AWARD)
-                )
+        Map<Sector, List<User>> winnersWithSector =
+                Arrays.stream(Sector.values()).collect(
+                        Collectors.toMap(sector -> sector, voteService::findWinnersBySector)
+                );
+
+        winnersWithSector.forEach((sector, users) ->
+                users.forEach(user ->
+                        createDocument(user, getAwardTemplatePath(sector), DocumentType.AWARD))
         );
     }
 
@@ -60,15 +58,12 @@ public class DocumentService {
         users.forEach(
                 user -> {
                     String templatePath = getCertificateTemplatePath(user);
-                    createDocument(user.getId(), templatePath, DocumentType.CERTIFICATION);
+                    createDocument(user, templatePath, DocumentType.CERTIFICATION);
                 }
         );
     }
 
-    private void createDocument(Long userId, String path, DocumentType documentType) {
-        User user = userRepository.getUserById(userId);
-
-        System.out.println(path);
+    private void createDocument(User user, String path, DocumentType documentType) {
         String imageUrl = imageGenerationService.writeOnDocument(path, user.getName(), documentType);
 
         Document document = Document.builder()
@@ -83,7 +78,7 @@ public class DocumentService {
     private String getCertificateTemplatePath(User user) {
         String part = user.getPart().toString();
         String role = user.getRole().getPureName();
-        if(user.getRole().equals(Role.ROLE_LEADER) || user.getRole().equals(Role.ROLE_SUB_LEADER)){
+        if (user.getRole().equals(Role.ROLE_LEADER) || user.getRole().equals(Role.ROLE_SUB_LEADER)) {
             return String.format(
                     "static/document/certificate/%s.jpg",
                     role

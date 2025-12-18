@@ -2,7 +2,6 @@ package com.likelion.last.domain.user.service;
 
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.exception.UserAlreadyExistException;
-import com.likelion.last.domain.user.exception.UserNotFoundException;
 import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.domain.user.web.dto.GetAllUserRes;
 import com.likelion.last.domain.user.web.dto.LoginReq;

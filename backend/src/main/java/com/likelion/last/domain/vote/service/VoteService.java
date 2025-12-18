@@ -79,6 +79,18 @@ public class VoteService {
         }
     }
 
+    public List<User> findWinnersBySector(Sector sector){
+        validateVoteIsClosed();
+        List<VoteRepository.VoteCountProjection> votesCountPerUser = voteRepository.findBySectorWithVoteCount(sector);
+
+        if (votesCountPerUser.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> winnerIds = getWinnersId(votesCountPerUser);
+        return userRepository.findAllById(winnerIds);
+    }
+
     public GetWinnersRes getWinnersBySector(Sector sector) {
         validateVoteIsClosed();
         List<VoteRepository.VoteCountProjection> votesCountPerUser = voteRepository.findBySectorWithVoteCount(sector);
