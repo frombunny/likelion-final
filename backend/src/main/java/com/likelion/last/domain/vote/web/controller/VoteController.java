@@ -4,6 +4,7 @@ import com.likelion.last.domain.document.service.DocumentService;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
+import com.likelion.last.domain.vote.web.dto.VoteParticipationRes;
 import com.likelion.last.domain.vote.web.dto.VoteReq;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.response.SuccessResponse;
@@ -37,6 +38,12 @@ public class VoteController {
     public ResponseEntity<SuccessResponse<GetWinnersRes>> getWinnersBySector(@RequestParam Sector sector) {
         GetWinnersRes getWinnersRes = voteService.getWinnersBySector(sector);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(getWinnersRes));
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<SuccessResponse<VoteParticipationRes>> getVoteParticipationStatus(@AuthenticationPrincipal UserPrincipal userPrincipal){
+        VoteParticipationRes voteParticipationRes = voteService.getVoteParticipationStatus(userPrincipal);
+        return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(voteParticipationRes));
     }
 
     @PutMapping

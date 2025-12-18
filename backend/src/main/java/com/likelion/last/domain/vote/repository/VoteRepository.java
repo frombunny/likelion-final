@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 public interface VoteRepository extends JpaRepository<Vote, Long> {
     boolean existsByVoterAndSector(User voter, Sector sector);
 
+    boolean existsByVoter(User voter);
+
     @Query("""
             select v.sector as sector , v.target.id as targetId, count(v) as voteCount
             from Vote v

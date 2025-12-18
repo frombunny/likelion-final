@@ -14,12 +14,15 @@ import com.likelion.last.domain.vote.repository.VoteRepository;
 import com.likelion.last.domain.vote.repository.VoteRepository.VoteCountProjection;
 import com.likelion.last.domain.vote.repository.VoteStatusRepository;
 import com.likelion.last.domain.vote.web.dto.GetWinnersRes;
+import com.likelion.last.domain.vote.web.dto.VoteParticipationRes;
 import com.likelion.last.domain.vote.web.dto.VoteReq;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.auth.exception.CanNotAccessException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,18 +38,24 @@ public class VoteService {
     private final VoteStatusRepository voteStatusRepository;
 
     @Transactional
-    public void vote(UserPrincipal user, VoteReq voteReq) {
+    public void vote(UserPrincipal userPrincipal, VoteReq voteReq) {
         validateVoteIsOpened();
 
-        User voter = userRepository.getUserById(user.getId());
+        User voter = userRepository.getUserById(userPrincipal.getId());
 
         validateVoteDuplicate(voter, voteReq);
+
+        Set<Long> targetIds = voteReq.voteItems().stream()
+                .flatMap(item -> item.users().stream())
+                .collect(Collectors.toSet());
+
+        Map<Long, User> targetMap = userRepository.findAllById(targetIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
 
         List<Vote> votes = voteReq.voteItems().stream()
                 .flatMap(item -> item.users().stream()
                         .map(targetId -> {
-                            User target = userRepository.getUserById(targetId);
-
+                            User target = targetMap.get(targetId);
                             validateSelfVote(voter, target);
 
                             return Vote.builder()
@@ -73,36 +82,35 @@ public class VoteService {
         voteStatus.changeVoteStatus();
     }
 
-    public void validateVoteIsClosed(){
-        if (voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()){
+    public VoteParticipationRes getVoteParticipationStatus(UserPrincipal userPrincipal) {
+        User user = userRepository.getUserById(userPrincipal.getId());
+
+        return VoteParticipationRes.from(voteRepository.existsByVoter(user));
+    }
+
+    public void validateVoteIsClosed() {
+        if (voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()) {
             throw new VoteProgressException();
         }
     }
 
-    public List<User> findWinnersBySector(Sector sector){
-        validateVoteIsClosed();
-        List<VoteRepository.VoteCountProjection> votesCountPerUser = voteRepository.findBySectorWithVoteCount(sector);
-
-        if (votesCountPerUser.isEmpty()) {
-            return List.of();
-        }
-
-        Set<Long> winnerIds = getWinnersId(votesCountPerUser);
-        return userRepository.findAllById(winnerIds);
+    public List<User> findWinnersBySector(Sector sector) {
+        return calculateWinnersBySector(sector);
     }
 
     public GetWinnersRes getWinnersBySector(Sector sector) {
-        validateVoteIsClosed();
-        List<VoteRepository.VoteCountProjection> votesCountPerUser = voteRepository.findBySectorWithVoteCount(sector);
+        return GetWinnersRes.from(calculateWinnersBySector(sector));
+    }
 
-        if (votesCountPerUser.isEmpty()) {
-            return GetWinnersRes.from(List.of());
+    private List<User> calculateWinnersBySector(Sector sector) {
+        validateVoteIsClosed();
+        List<VoteCountProjection> votes = voteRepository.findBySectorWithVoteCount(sector);
+        if (votes.isEmpty()) {
+            return List.of();
         }
 
-        Set<Long> winnerIds = getWinnersId(votesCountPerUser);
-        List<User> winners = userRepository.findAllById(winnerIds.stream().toList());
-
-        return GetWinnersRes.from(winners);
+        Set<Long> winnerIds = getWinnersId(votes);
+        return userRepository.findAllById(winnerIds);
     }
 
     private void validateVoteDuplicate(User voter, VoteReq voteReq) {
@@ -125,7 +133,7 @@ public class VoteService {
     }
 
     private void validateVoteIsOpened() {
-        if(!voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()){
+        if (!voteStatusRepository.getVoteStatus(VOTE_STATUS_ID).isOpen()) {
             throw new VoteClosedException();
         }
     }
