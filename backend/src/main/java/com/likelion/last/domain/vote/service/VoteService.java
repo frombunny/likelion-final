@@ -84,8 +84,9 @@ public class VoteService {
 
     public VoteParticipationRes getVoteParticipationStatus(UserPrincipal userPrincipal) {
         User user = userRepository.getUserById(userPrincipal.getId());
+        VoteStatus voteStatus = voteStatusRepository.getVoteStatus(VOTE_STATUS_ID);
 
-        return VoteParticipationRes.from(voteRepository.existsByVoter(user));
+        return VoteParticipationRes.from(voteRepository.existsByVoter(user), voteStatus.isOpen());
     }
 
     public void validateVoteIsClosed() {

@@ -14,9 +14,6 @@ export default function VoteGuide({ onConfirm }) {
           <GuideDesc>
             여러분이 생각하기에 해당 부문에 <br/>
             '가장 적합한' 사람을 뽑아주세요!
-            <br/>
-            <br/>
-            (자기 투표는 불가능해요🥲)
           </GuideDesc>
         </GuideContent>
       </GuideCard>
@@ -27,7 +24,7 @@ export default function VoteGuide({ onConfirm }) {
           <GuideTitle>각 부문마다 2명씩 투표</GuideTitle>
           <GuideDesc>
             각 부문마다 2명씩 투표해 주시면 되요!<br />
-            중복 투표는 불가능해요🥲
+            중복 투표 및 자기 투표는 불가능해요🥲
             <br />
             <br />
             모두가 투표를 완료하면 결과를 확인할 수 있어요😘

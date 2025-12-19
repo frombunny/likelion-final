@@ -18,16 +18,32 @@ export default function Certificate({ certificates = [] }) {
     },
   });
 
-  const downloadCertificate = () => {
+  const downloadCertificate = async () => {
     const now = certificates[currentSlide];
+
     if (!now || !now.downloadUrl) {
       alert("다운로드 URL이 없습니다");
       return;
     }
-    const link = document.createElement("a");
-    link.href = now.downloadUrl;
-    link.download = "certificate.png";
-    link.click();
+
+    try {
+      const response = await fetch(now.downloadUrl, { mode: "cors" });
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = `certificate_${currentSlide + 1}.png`; // 저장 파일명
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("다운로드 실패:", error);
+      alert("다운로드 중 오류가 발생했습니다");
+    }
   };
 
   return (
@@ -62,7 +78,7 @@ const Wrapper = styled.div`
 const TopMessage = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: center; 
+  align-items: center;
   justify-content: center;
   gap: 12px;
   margin-top: 10px;

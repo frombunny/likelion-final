@@ -1,4 +1,4 @@
-import boogie from "../../assets/common/boogie.svg";
+import boogie from "../../assets/vote/voteGatheringIcon.svg";
 import styled from "styled-components";
 
 export default function VoteComplete() {

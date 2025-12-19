@@ -8,11 +8,21 @@ export default function AwardSectionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [results, setResults] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   const API = import.meta.env.VITE_BACKEND_WINNERS_URL;
+  const STATUS_API = import.meta.env.VITE_BACKEND_VOTE_STATUS_URL;
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
+
+    axios.get(STATUS_API, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => {
+      setIsOpen(res.data?.data?.isOpen ?? false);
+    })
+    .catch(() => setIsOpen(false));
 
     axios
       .get(`${API}?sector=${id}`, {
@@ -45,6 +55,7 @@ export default function AwardSectionPage() {
   return (
     <Award
       results={results}
+      isOpen={isOpen}
       onNext={() => {
         if (!isLast) navigate(`/award/${nextId}`);
         else navigate("/award/complete");

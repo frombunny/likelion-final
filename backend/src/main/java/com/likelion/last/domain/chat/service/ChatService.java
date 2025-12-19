@@ -3,8 +3,6 @@ package com.likelion.last.domain.chat.service;
 import com.likelion.last.domain.chat.exception.InvalidChatMessageException;
 import com.likelion.last.domain.chat.web.dto.ChatMessageReq;
 import com.likelion.last.domain.chat.web.dto.ChatMessageRes;
-import com.likelion.last.domain.user.entity.User;
-import com.likelion.last.domain.user.repository.UserRepository;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

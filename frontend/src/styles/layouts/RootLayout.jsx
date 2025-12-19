@@ -13,6 +13,7 @@ export default function RootLayout() {
     pathname.startsWith("/vote") ||
     pathname.startsWith("/award") ||
     pathname.startsWith("/Certificate") ||
+    pathname.startsWith("/chat") ||
     pathname.startsWith("/certificate") ;
 
   return (

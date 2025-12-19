@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import styled from "styled-components";
 import bgImage from "../../assets/login/loginBg.svg";
-import loginButton from "../../assets/login/kakaoLoginButton.png";
+import loginButton from "../../assets/login/kakaoLoginButton.svg";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -24,31 +24,39 @@ export default function Login() {
     axios
       .post(BACKEND_LOGIN_URL, { code })
       .then((res) => {
-        const token = res.data.data.token;
-        localStorage.setItem("accessToken", token);
-        navigate("/");
-      })
-      .catch((err) => {
-        const errorCode = err.response?.data?.code;
+        const loginRes = res.data.data;
 
-        if (errorCode === "USER_NOT_FOUND_404") {
-          const kakaoInfo = err.response.data.data.kakaoInfo;
+        // 로그인 성공
+        if (loginRes.status === "LOGIN_SUCCESS") {
+          localStorage.setItem("accessToken", loginRes.accessToken);
+          navigate("/");
+          return;
+        }
 
+        // 회원가입 필요
+        if (loginRes.status === "SIGNUP_REQUIRED") {
           navigate("/signUp", {
             state: {
-              kakaoInfo: kakaoInfo,
+              kakaoInfo: loginRes.kakaoInfo,
             },
           });
           return;
         }
 
-        console.error("로그인 에러:", err);
+        console.error("예상치 못한 로그인 상태:", loginRes);
+      })
+      .catch((err) => {
+        console.error("로그인 통신 에러:", err);
       });
   }, []);
 
   return (
     <LoginWrapper>
-      <LoginButton onClick={handleLogin} />
+      <LoginButton
+        src={loginButton}
+        alt="카카오 로그인"
+        onClick={handleLogin}
+      />
     </LoginWrapper>
   );
 }
@@ -65,7 +73,7 @@ const LoginWrapper = styled.div`
   background-repeat: no-repeat;
 `;
 
-const LoginButton = styled.button`
+const LoginButton = styled.img`
   width: 300px;
   height: 60px;
   position: absolute;
@@ -73,11 +81,5 @@ const LoginButton = styled.button`
   left: 50%;
   transform: translateX(-50%);
   z-index: 999;
-
-  background-image: url(${loginButton});
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-color: transparent !important;
-  border: none;
+  cursor: pointer;
 `;

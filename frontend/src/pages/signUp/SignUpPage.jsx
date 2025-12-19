@@ -13,9 +13,28 @@ export default function SignUpPage() {
   const part = location.state?.part;
   const role = location.state?.role;
 
-  const [name, setName] = useState("");
-  const [kakaoId, setKakaoId] = useState(null);
-  const [profileImageUrl, setProfileImageUrl] = useState("");
+  const ROLE_LABEL = {
+    ROLE_BABY_LION: "아기사자",
+    ROLE_EXECUTIVE: "운영진",
+    ROLE_PART_LEADER: "파트 팀장",
+    ROLE_SUB_LEADER: "부대표",
+    ROLE_LEADER: "대표",
+  };
+
+  const PART_LABEL = {
+    PM: "기획",
+    DE: "디자인",
+    FE: "프론트엔드",
+    BE: "백엔드",
+  };
+  
+  const [name, setName] = useState(
+    kakaoInfo?.kakao_account?.profile?.nickname ?? ""
+  );
+  const [kakaoId] = useState(kakaoInfo?.id ?? null);
+  const [profileImageUrl] = useState(
+    kakaoInfo?.kakao_account?.profile?.profile_image_url ?? ""
+  );
 
   const SIGNUP_API = import.meta.env.VITE_BACKEND_SIGNUP_URL;
 
@@ -23,13 +42,8 @@ export default function SignUpPage() {
     if (!kakaoInfo) {
       alert("카카오 정보가 없습니다. 다시 로그인 해주세요.");
       navigate("/login");
-      return;
     }
-
-    setKakaoId(kakaoInfo.id);
-    setName(kakaoInfo.kakao_account.profile.nickname);
-    setProfileImageUrl(kakaoInfo.kakao_account.profile.profile_image_url);
-  }, []);
+  }, [kakaoInfo, navigate]);
 
   const handleSignUp = () => {
     axios
@@ -60,13 +74,10 @@ export default function SignUpPage() {
       <Input value={name} onChange={(e) => setName(e.target.value)} />
 
       <Label>트랙</Label>
-      <FixedBox>{part}</FixedBox>
+      <FixedBox>{PART_LABEL[part] ?? "알 수 없음"}</FixedBox>
 
       <Label>직위</Label>
-      <FixedBox>{role}</FixedBox>
-
-      <Label>카카오 ID</Label>
-      <FixedBox>{kakaoId ?? "불러오는 중..."}</FixedBox>
+      <FixedBox>{ROLE_LABEL[role] ?? "알 수 없음"}</FixedBox>
 
       <ButtonArea>
         <BasicButton
@@ -80,36 +91,36 @@ export default function SignUpPage() {
 }
 
 const Wrapper = styled.div`
-  padding: 24px 20px;
+  padding: 28px 22px;
 `;
 
 const Title = styled.h1`
   font-size: 2.4rem;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   color: ${colors.text_primary};
 `;
 
 const Label = styled.p`
   font-size: 1.4rem;
-  margin: 12px 0 4px;
+  margin: 18px 0 6px;
   color: ${colors.text_gray};
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   border-radius: 6px;
   border: 1px solid #ddd;
 `;
 
 const FixedBox = styled.div`
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   border-radius: 6px;
   background: #f5f5f5;
 `;
 
 const ButtonArea = styled.div`
-  margin-top: 30px;
+  margin-top: 40px;
 `;

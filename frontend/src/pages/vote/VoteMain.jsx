@@ -141,12 +141,15 @@ const Card = styled.div`
 
 const Image = styled.img`
   width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   border-radius: 8px;
 `;
 
 const Name = styled.div`
   margin-top: 4px;
   font-size: 1.4rem;
+  font-weight: 700;
   text-align: center;
 `;
 

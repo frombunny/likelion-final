@@ -1,5 +1,6 @@
 import styled from "styled-components";
 import colors from "../../styles/common/colors";
+import madeBy from "../../assets/common/madeBy.svg";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
@@ -19,6 +20,11 @@ export default function Home() {
         <SectionTitle>우리의 성장을 기념해요</SectionTitle>
 
         <MenuList>
+          <MenuItem onClick={() => navigate("/chat")}>
+            <span>사자들의 피날레 톡</span>
+            <Arrow>›</Arrow>
+          </MenuItem>
+
           <MenuItem onClick={() => navigate("/vote")}>
             <span>올해의 멋사 투표</span>
             <Arrow>›</Arrow>
@@ -39,7 +45,11 @@ export default function Home() {
       <FooterSection>
         <FooterTitle>서비스 이용</FooterTitle>
         <Logout onClick={() => navigate("/login")}>로그아웃</Logout>
+        <MadeBy src={madeBy} alt="made by likelion" />
       </FooterSection>
+
+      <MadeBy src={madeBy} alt="made by likelion" />
+      
     </HomeWrapper>
   );
 }
@@ -115,4 +125,11 @@ const Logout = styled.div`
   font-size: 1.6rem;
   color: #e24c4c;
   cursor: pointer;
+`;
+
+const MadeBy = styled.img`
+  width: 140px;
+  margin-top: 300px;
+  opacity: 0.8;
+  display: block;
 `;
