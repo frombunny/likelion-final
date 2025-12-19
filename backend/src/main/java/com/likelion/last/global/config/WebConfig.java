@@ -9,9 +9,10 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(
-                        "http://localhost:3000",
-                        "http://localhost:5173"
+                .allowedOriginPatterns(
+                        "https://52.79.88.128.nip.io",
+                        "https://*.vercel.app",
+                        "http://localhost:*"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowCredentials(true);
