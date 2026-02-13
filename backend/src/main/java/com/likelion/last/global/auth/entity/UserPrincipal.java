@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class UserPrincipal implements UserDetails {
     private final Long id;
     private final Long kakaoId;
+    private final String name;
     private final Role role;
     private final String profileImageUrl;
 
@@ -20,6 +21,7 @@ public class UserPrincipal implements UserDetails {
         this.id = user.getId();
         this.kakaoId = user.getKakaoId();
         this.role = user.getRole();
+        this.name = user.getName();
         this.profileImageUrl = user.getProfileImageUrl();
     }
 

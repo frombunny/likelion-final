@@ -29,7 +29,7 @@ public class DocumentService {
     private final ImageGenerationService imageGenerationService;
 
     public GetAllDocumentsRes getDocumentListByUser(UserPrincipal userPrincipal) {
-        User user = userRepository.getUserById(userPrincipal.getId());
+        User user = userRepository.getReferenceById(userPrincipal.getId());
 
         List<Document> documents = documentRepository.findAllByUser(user);
         return GetAllDocumentsRes.from(documents);
@@ -37,8 +37,6 @@ public class DocumentService {
 
     @Transactional
     public void createAwards() {
-        voteService.validateVoteIsClosed();
-
         Map<Sector, List<User>> winnersWithSector =
                 Arrays.stream(Sector.values()).collect(
                         Collectors.toMap(sector -> sector, voteService::findWinnersBySector)
