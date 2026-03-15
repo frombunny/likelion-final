@@ -1,40 +1,52 @@
 import styled from "styled-components";
+import colors from "../common/colors";
 
-export default function AppLayout({ header, children}) {
+export default function AppLayout({ header, children, showHomeIndicator = false }) {
   return (
-    <AppBackground>
-      <AppContainer>
+    <Shell>
+      <PhoneFrame>
         {header}
-        <MainContent>{children}</MainContent>
-
-      </AppContainer>
-    </AppBackground>
+        <Content>{children}</Content>
+        {showHomeIndicator && <HomeIndicator aria-hidden="true" />}
+      </PhoneFrame>
+    </Shell>
   );
 }
 
-
-export const AppBackground = styled.div`
-  width: 100vw;
-  min-height: 100vh;
-  background-color: #000;
+const Shell = styled.div`
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
+  background: ${colors.bgShell};
 `;
 
-export const AppContainer = styled.div`
+const PhoneFrame = styled.div`
   width: 100%;
-  max-width: 420px;
-  min-height: calc(var(--vh) * 100);
-  background-color: #fff;
+  max-width: var(--app-width);
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  background: ${colors.bgPage};
+  overflow: hidden;
   position: relative;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
 `;
 
-export const MainContent = styled.div`
+const Content = styled.main`
   flex: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 0;
   overflow-y: auto;
+`;
+
+const HomeIndicator = styled.span`
+  width: 134px;
+  height: 5px;
+  border-radius: 100px;
+  background: #111111;
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 50;
 `;

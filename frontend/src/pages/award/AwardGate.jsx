@@ -1,83 +1,114 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import boogie from "../../assets/vote/voteGatheringIcon.svg";
+import axios from "axios";
+import BasicButton from "../../shared/BasicButton";
+import colors from "../../styles/common/colors";
+import icon from "../../assets/vote/voteInProgressIcon.svg";
 import { AWARD_CATEGORIES } from "./awardCategories";
 
 export default function AwardGate() {
   const navigate = useNavigate();
-  const STATUS_API = import.meta.env.VITE_BACKEND_VOTE_STATUS_URL;
-
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isVotingOpen, setIsVotingOpen] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-
     axios
-      .get(STATUS_API, {
-        headers: { Authorization: `Bearer ${token}` },
+      .get(import.meta.env.VITE_BACKEND_VOTE_STATUS_URL, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}` },
       })
       .then((res) => {
         const open = res.data?.data?.isOpen ?? false;
-        setIsOpen(open);
+        setIsVotingOpen(open);
 
         if (!open) {
-          navigate(`/award/${AWARD_CATEGORIES[0]}`);
+          navigate(`/award/${AWARD_CATEGORIES[0]}`, { replace: true });
         }
       })
-      .catch(() => setIsOpen(true))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        setIsVotingOpen(true);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [navigate]);
 
-  if (loading) return <CenterBox>확인 중...</CenterBox>;
+  if (loading) {
+    return <Loading>확인 중...</Loading>;
+  }
 
-  if (isOpen)
-    return (
-          <VoteCompleteWrapper>
-            <VoteCompleteImage src={boogie} alt="boogie" />
-            <VoteCompleteText>투표가 진행 중 입니다.</VoteCompleteText>
-          </VoteCompleteWrapper>
-    );
+  if (!isVotingOpen) {
+    return null;
+  }
 
-  return null;
+  return (
+    <Page>
+      <Center>
+        <Icon src={icon} alt="vote open" />
+        <Title>잠시만요! 아직 투표 중이에요</Title>
+        <Text>
+          모두의 투표가 마무리되면,
+          <br />
+          바로 결과를 알려드릴게요!
+        </Text>
+      </Center>
+
+      <BottomArea>
+        <BasicButton text="확인" onClick={() => navigate("/")} />
+      </BottomArea>
+    </Page>
+  );
 }
 
-const CenterBox = ({ children }) => (
-  <div
-    style={{
-      padding: "40px",
-      textAlign: "center",
-      fontSize: "1.6rem",
-      lineHeight: 1.6,
-    }}
-  >
-    {children}
-  </div>
-);
-
-const VoteCompleteWrapper = styled.div`
+const Page = styled.div`
   width: 100%;
-  height: 100%;
-  padding: 40px 20px;
+  min-height: var(--content-min-height);
+  padding: 136px 20px 140px;
+`;
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
+const Center = styled.div`
+  width: 201px;
+  margin: 0 auto;
   text-align: center;
 `;
 
-const VoteCompleteImage = styled.img`
-  width: 160px;
-  height: auto;
-  margin-bottom: 24px;
+const Icon = styled.img`
+  width: 200px;
+  height: 200px;
 `;
 
-const VoteCompleteText = styled.div`
-  font-size: 1.6rem;
-  color: #555;
-  font-weight: 500;
+const Title = styled.p`
+  margin: 24px 0 8px;
+  color: ${colors.textGray};
+  font-size: 1.8rem;
+  font-weight: 600;
+  line-height: 2.6rem;
+  letter-spacing: -0.045rem;
+`;
+
+const Text = styled.p`
+  margin: 0;
+  color: ${colors.textGray};
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 2rem;
+  letter-spacing: -0.035rem;
+`;
+
+const BottomArea = styled.div`
+  position: fixed;
+  left: 50%;
+  bottom: 50px;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  padding: 0 20px;
+`;
+
+const Loading = styled.div`
+  min-height: var(--content-min-height);
+  padding: 48px 20px;
+  text-align: center;
+  color: ${colors.textGray};
+  font-size: 1.5rem;
 `;

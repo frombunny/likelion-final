@@ -2,43 +2,37 @@ import { useEffect, useState } from "react";
 import Certificate from "./Certificate";
 
 export default function CertificatePage() {
+  const apiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_URL;
+  const [loading, setLoading] = useState(Boolean(apiBase));
   const [certificates, setCertificates] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCertificates = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/documents`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        });
+    if (!apiBase) return;
 
-        const body = await res.json();
-
-        const mapped = body.data.documents.map((doc) => ({
-          downloadUrl: doc.imageUrl,
-          topImage: null,
-          track: doc.documentType,
-          text: "",
-          date: "",
-          from: "한성대학교 멋쟁이사자처럼",
-        }));
-
-        setCertificates(mapped);
-      } catch (error) {
-        console.error("Failed to fetch certificates:", error);
-      } finally {
+    fetch(`${apiBase}/documents`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        const docs = json?.data?.documents || [];
+        setCertificates(
+          docs.map((doc) => ({
+            url: doc.imageUrl,
+            type: doc.documentType,
+          }))
+        );
+      })
+      .catch((error) => {
+        console.error("수료증 조회 실패:", error);
+        setCertificates([]);
+      })
+      .finally(() => {
         setLoading(false);
-      }
-    };
+      });
+  }, [apiBase]);
 
-    fetchCertificates();
-  }, []);
-
-  if (loading) return <div>불러오는 중...</div>;
-
-  return <Certificate certificates={certificates} />;
+  return <Certificate loading={loading} certificates={certificates} />;
 }

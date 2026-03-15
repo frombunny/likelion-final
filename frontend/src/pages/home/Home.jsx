@@ -1,135 +1,138 @@
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import colors from "../../styles/common/colors";
 import madeBy from "../../assets/common/madeBy.svg";
-import { useNavigate } from "react-router-dom";
+
+const MENUS = [
+  { label: "멋사 피날레 톡", path: "/chat" },
+  { label: "올해의 멋사 어워즈", path: "/award" },
+  { label: "내 수료증 발급", path: "/certificate" },
+];
 
 export default function Home() {
   const navigate = useNavigate();
+  const userName = localStorage.getItem("userName") || "권기남";
 
   return (
-    <HomeWrapper>
-      <GreetingSection>
-        <GreetingTitle>
-          오늘은 <Highlight>한성 멋사</Highlight>,
-          <br />
-          헤어지는 날!
-        </GreetingTitle>
-      </GreetingSection>
+    <Page>
+      <Headline>
+        멋진 사자 <Blue>{userName}</Blue>님,
+        <br />
+        그동안 고생 많았습니다!
+      </Headline>
 
-      <MenuSection>
-        <SectionTitle>우리의 성장을 기념해요</SectionTitle>
-
-        <MenuList>
-          <MenuItem onClick={() => navigate("/chat")}>
-            <span>사자들의 피날레 톡</span>
+      <Section>
+        <SectionLabel>우리의 성장을 기념해요</SectionLabel>
+        {MENUS.map((menu) => (
+          <MenuButton key={menu.path} type="button" onClick={() => navigate(menu.path)}>
+            <span>{menu.label}</span>
             <Arrow>›</Arrow>
-          </MenuItem>
+          </MenuButton>
+        ))}
+      </Section>
 
-          <MenuItem onClick={() => navigate("/vote")}>
-            <span>올해의 멋사 투표</span>
-            <Arrow>›</Arrow>
-          </MenuItem>
+      <Divider />
 
-          <MenuItem onClick={() => navigate("/award")}>
-            <span>올해의 멋사 어워즈</span>
-            <Arrow>›</Arrow>
-          </MenuItem>
+      <ServiceSection>
+        <SectionLabel>서비스 이용</SectionLabel>
+        <LogoutButton type="button" onClick={() => navigate("/login")}>
+          <Danger>로그아웃</Danger>
+        </LogoutButton>
+      </ServiceSection>
 
-          <MenuItem onClick={() => navigate("/certificate")}>
-            <span>내 수료증 발급</span>
-            <Arrow>›</Arrow>
-          </MenuItem>
-        </MenuList>
-      </MenuSection>
-
-      <FooterSection>
-        <FooterTitle>서비스 이용</FooterTitle>
-        <Logout onClick={() => navigate("/login")}>로그아웃</Logout>
-        <MadeBy src={madeBy} alt="made by likelion" />
-      </FooterSection>
-
-      <MadeBy src={madeBy} alt="made by likelion" />
-      
-    </HomeWrapper>
+      <MadeBy src={madeBy} alt="made by" />
+    </Page>
   );
 }
 
-const HomeWrapper = styled.div`
+const Page = styled.div`
   width: 100%;
-  padding: 24px 20px;
+  min-height: var(--content-min-height);
+  padding: 24px 24px 54px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
 `;
 
-const GreetingSection = styled.div`
-  margin-top: 10px;
+const Headline = styled.h1`
+  margin: 0;
+  color: ${colors.textPrimary};
+  font-size: 2.2rem;
+  font-weight: 600;
+  line-height: 3.8rem;
+  letter-spacing: -0.07rem;
 `;
 
-const GreetingTitle = styled.h1`
-  font-size: 2.4rem;
-  font-weight: 700;
-  line-height: 1.4;
+const Blue = styled.span`
+  color: ${colors.primaryBlue};
 `;
 
-const Highlight = styled.span`
-  color: ${colors.primary_blue};}
+const Section = styled.section`
+  margin-top: 34px;
 `;
 
-const MenuSection = styled.div`
+const ServiceSection = styled.section`
+  margin-top: 24px;
+`;
+
+const SectionLabel = styled.p`
+  margin: 0 0 8px;
+  color: ${colors.textGray};
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1.8rem;
+  letter-spacing: -0.0325rem;
+`;
+
+const MenuButton = styled.button`
   width: 100%;
+  height: 60px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const SectionTitle = styled.div`
-  color: ${colors.text_primary};
-  font-size: 1.2rem;
-`;
-
-const MenuList = styled.div`
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid #eee;
-`;
-
-const MenuItem = styled.div`
-  width: 100%;
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 18px 0;
-  font-size: 1.6rem;
-  border-bottom: 1px solid #eee;
+  color: ${colors.textPrimary};
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 2.8rem;
+  letter-spacing: -0.045rem;
+  text-align: left;
   cursor: pointer;
 `;
 
 const Arrow = styled.span`
+  color: #c3c3c3;
+  font-size: 2rem;
+  line-height: 1;
+  transform: translateY(-1px);
+`;
+
+const Divider = styled.div`
+  width: calc(100% + 48px);
+  height: 1px;
+  margin: 24px -24px 0;
+  background: #dbdbdb;
+`;
+
+const Danger = styled.span`
+  color: ${colors.textDanger};
+`;
+
+const LogoutButton = styled.button`
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  color: ${colors.textPrimary};
   font-size: 1.8rem;
-  color: #bbb;
-`;
-
-const FooterSection = styled.div`
-  margin-top: 20px;
-  border-top: 1px solid #eee;
-  padding-top: 24px;
-`;
-
-const FooterTitle = styled.div`
-  font-size: 1.2rem;
-  color: ${colors.text_gray};
-  margin-bottom: 12px;
-`;
-
-const Logout = styled.div`
-  font-size: 1.6rem;
-  color: #e24c4c;
+  font-weight: 400;
+  line-height: 2.8rem;
+  letter-spacing: -0.045rem;
+  text-align: left;
   cursor: pointer;
 `;
 
 const MadeBy = styled.img`
-  width: 140px;
-  margin-top: 300px;
+  width: 113px;
+  height: 12px;
+  margin-top: auto;
   opacity: 0.8;
-  display: block;
 `;

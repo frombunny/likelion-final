@@ -1,215 +1,242 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import sendButtonActivate from "../../assets/chat/sendButtonActivate.svg";
 import sendButtonDeactivate from "../../assets/chat/sendButtonDeactivate.svg";
+import boogie from "../../assets/common/boogie.svg";
+import colors from "../../styles/common/colors";
+
+const FALLBACK_PROFILE =
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop";
 
 export default function Chat() {
   const [message, setMessage] = useState("");
-  const [chatList, setChatList] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
 
+  const listRef = useRef(null);
   const stompRef = useRef(null);
 
-  useEffect(() => {
-    const socket = new SockJS(import.meta.env.VITE_BACKEND_WS_URL + "/ws");
+  const canSend = useMemo(() => connected && Boolean(message.trim()), [connected, message]);
 
-    const stomp = new Client({
+  useEffect(() => {
+    const wsBase = import.meta.env.VITE_BACKEND_WS_URL;
+    if (!wsBase) return;
+
+    const socket = new SockJS(`${wsBase}/ws`);
+    const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
-
-      debug: (msg) => console.log("STOMP >>>", msg),
-
       connectHeaders: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
       },
-
       onConnect: () => {
         setConnected(true);
 
-        stomp.subscribe("/sub/chat", (frame) => {
-          const data = JSON.parse(frame.body);
-
-          const id = Date.now();
-          const randomX = Math.random() * 20 + 40;
-          const randomY = Math.random() * 70 + 10;
-
-          const bubble = {
-            id,
-            message: data.message,
-            senderProfileImage: data.senderProfileImage,
-            x: randomX,
-            y: randomY,
-          };
-
-          setChatList((prev) => [...prev, bubble]);
-
-          setTimeout(() => {
-            setChatList((prev) => prev.filter((m) => m.id !== id));
-          }, 5000);
+        client.subscribe("/sub/chat", (frame) => {
+          try {
+            const payload = JSON.parse(frame.body);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `in-${Date.now()}-${Math.random()}`,
+                mine: false,
+                text: payload.message || "",
+                profile: payload.senderProfileImage || FALLBACK_PROFILE,
+              },
+            ]);
+          } catch (error) {
+            console.error("채팅 파싱 실패:", error);
+          }
         });
       },
-
-      onStompError: () => setConnected(false),
       onWebSocketClose: () => setConnected(false),
+      onStompError: () => setConnected(false),
     });
 
-    stomp.activate();
-    stompRef.current = stomp;
+    client.activate();
+    stompRef.current = client;
 
-    return () => stomp.deactivate();
+    return () => {
+      client.deactivate();
+    };
   }, []);
 
-  const sendMessage = () => {
-    if (!message.trim() || !connected) return;
+  useEffect(() => {
+    if (!listRef.current) return;
+    listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages]);
 
-    stompRef.current.publish({
+  const send = () => {
+    const text = message.trim();
+    if (!text || !connected) return;
+
+    const myProfile = localStorage.getItem("profileImage") || FALLBACK_PROFILE;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `out-${Date.now()}`,
+        mine: true,
+        text,
+        profile: myProfile,
+      },
+    ]);
+
+    stompRef.current?.publish({
       destination: "/pub/send",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message: text }),
     });
 
     setMessage("");
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !isComposing) {
-      sendMessage();
+  const onKeyDown = (event) => {
+    if (event.key === "Enter" && !isComposing) {
+      event.preventDefault();
+      send();
     }
   };
 
   return (
-    <ChatWrapper>
-      <FloatingArea>
-        {chatList.map((c) => (
-          <FloatingMessage
-            key={c.id}
-            style={{
-              top: `${c.y}%`,
-              left: `${c.x}%`,
-            }}
-          >
-            <Profile src={c.senderProfileImage} />
-            <Bubble>{c.message}</Bubble>
-          </FloatingMessage>
-        ))}
-      </FloatingArea>
+    <Page>
+      {messages.length === 0 && <Watermark src={boogie} alt="" aria-hidden="true" />}
 
-      <InputBar>
-        <ChatInput
-          placeholder={
-            connected ? "내용을 입력해 주세요" : "채팅 서버 연결 중..."
-          }
+      <MessageList ref={listRef}>
+        {messages.map((item) => (
+          <MessageRow key={item.id} mine={item.mine}>
+            {!item.mine && <Avatar src={item.profile} alt="profile" />}
+            <Bubble>{item.text}</Bubble>
+            {item.mine && <Avatar src={item.profile} alt="profile" />}
+          </MessageRow>
+        ))}
+      </MessageList>
+
+      <Composer>
+        <Input
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
+          maxLength={36}
+          placeholder="질문 내용을 작성해 주세요"
+          onChange={(event) => setMessage(event.target.value)}
+          onKeyDown={onKeyDown}
           onCompositionStart={() => setIsComposing(true)}
           onCompositionEnd={() => setIsComposing(false)}
-          disabled={!connected}
         />
-
-        <SendButton
-          disabled={!message.trim() || !connected}
-          onClick={sendMessage}
-        >
-          <img
-            src={
-              !message.trim() || !connected
-                ? sendButtonDeactivate
-                : sendButtonActivate
-            }
-            alt="send"
-          />
+        <SendButton type="button" disabled={!canSend} onClick={send}>
+          <img src={canSend ? sendButtonActivate : sendButtonDeactivate} alt="send" />
         </SendButton>
-      </InputBar>
-    </ChatWrapper>
+      </Composer>
+    </Page>
   );
 }
 
-const ChatWrapper = styled.div`
+const Page = styled.div`
   width: 100%;
-  height: calc(100vh - 60px);
-  margin-top: 12px;
+  min-height: var(--content-min-height);
+  padding: 24px 20px 138px;
   position: relative;
 `;
 
-const FloatingArea = styled.div`
-  position: relative;
-  width: 100%;
-  height: 90%;
-`;
-
-const FloatingMessage = styled.div`
-  position: absolute;
-  transform: translate(-50%, -50%);
+const MessageList = styled.div`
+  width: var(--content-width);
+  height: 100%;
+  max-height: calc(var(--content-min-height) - 186px);
+  margin: 0 auto;
+  overflow-y: auto;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  animation: fade 5s forwards;
-
-  @keyframes fade {
-    0% {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    10% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    80% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-  }
+  flex-direction: column;
+  gap: 20px;
 `;
 
-const Profile = styled.img`
+const Watermark = styled.img`
+  width: 250px;
+  height: 250px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -38%);
+  opacity: 0.08;
+  pointer-events: none;
+`;
+
+const MessageRow = styled.div`
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: ${({ mine }) => (mine ? "flex-end" : "flex-start")};
+`;
+
+const Avatar = styled.img`
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 150px;
+  border: 1.5px solid ${colors.border};
+  object-fit: cover;
+  background: ${colors.white};
 `;
 
 const Bubble = styled.div`
-  background: white;
-  border-radius: 14px;
-  padding: 10px 14px;
-  font-size: 1.4rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  width: 221px;
+  min-height: 52px;
+  border: 1px solid ${colors.border};
+  border-radius: 8px;
+  background: ${colors.white};
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  padding: 8px 12px;
+  color: ${colors.textPrimary};
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1.8rem;
+  letter-spacing: -0.0325rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 `;
 
-const InputBar = styled.div`
-  padding: 14px 16px;
+const Composer = styled.div`
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  padding: 0 20px;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 6px;
 `;
 
-const ChatInput = styled.input`
-  flex: 1;
-  height: 44px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
-  padding: 0 14px;
+const Input = styled.input`
+  width: 300px;
+  height: 52px;
+  border: 1px solid ${colors.border};
+  border-radius: 8px;
+  background: ${colors.white};
+  padding: 0 15px;
+  color: ${colors.textPrimary};
   font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 2rem;
+  letter-spacing: -0.035rem;
+
+  &::placeholder {
+    color: ${colors.textMuted};
+  }
 `;
 
 const SendButton = styled.button`
-  width: 44px;
-  height: 44px;
-  border: none;
-  padding: 0;
-  background: transparent;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: ${({ disabled }) => (disabled ? "#cacaca" : colors.primaryBlue)};
+  display: grid;
+  place-items: center;
   cursor: ${({ disabled }) => (disabled ? "default" : "pointer")};
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   img {
-    width: 100%;
-    height: 100%;
+    width: 26px;
+    height: 26px;
   }
 `;

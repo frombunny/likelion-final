@@ -1,41 +1,23 @@
-import styled, { css } from "styled-components";
+import styled from "styled-components";
 import colors from "../styles/common/colors";
 
-export default function BasicButton({ text, onClick, disabled = false }) {
+export default function BasicButton({ text, onClick, disabled = false, type = "button" }) {
   return (
-    <ButtonWrapper disabled={disabled} onClick={disabled ? undefined : onClick}>
+    <Button type={type} disabled={disabled} onClick={disabled ? undefined : onClick}>
       {text}
-    </ButtonWrapper>
+    </Button>
   );
 }
 
-const ButtonWrapper = styled.button`
-  display: flex;
-  width: 100%;
-  
-  max-width: 350px;
-  height: 22px;
-  margin: 0 auto;
-
-  padding: 14px 16px;
-  justify-content: center;
-  align-items: center;
-
+const Button = styled.button`
+  width: var(--content-width);
+  height: 56px;
   border-radius: 6px;
-  border: none;
-  cursor: pointer;
-
+  background: ${({ disabled }) => (disabled ? "#DDDDDD" : colors.primaryBlue)};
+  color: ${({ disabled }) => (disabled ? "#9C9C9C" : colors.white)};
   font-size: 1.6rem;
   font-weight: 600;
-
-  background: ${colors.primary_blue};
-  color: ${colors.primary_white};
-
-  ${(props) =>
-    props.disabled &&
-    css`
-      background: ${colors.disable_gray};
-      color: ${colors.text_disable};
-      cursor: default;
-    `}
+  line-height: 2.4rem;
+  letter-spacing: -0.04rem;
+  cursor: ${({ disabled }) => (disabled ? "default" : "pointer")};
 `;

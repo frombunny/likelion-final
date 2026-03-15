@@ -1,220 +1,190 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import styled from "styled-components";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
 import BasicButton from "../../shared/BasicButton";
+import awardBadge from "../../assets/vote/awardBadge.svg";
+import colors from "../../styles/common/colors";
 
-export default function Award({ results = [], onNext, isOpen }) {
-  const [currentSlide, setCurrentSlide] = useState(0);
+export default function Award({ results, onNext }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const slides = useMemo(() => results || [], [results]);
 
   const [sliderRef] = useKeenSlider({
-  loop: true,
-  mode: "snap",
-  rubberband: false,
-  renderMode: "precision",
-  dragSpeed: 1.5,
-  slides: {
-    perView: 1,
-    spacing: 20,
-  },
+    loop: false,
+    mode: "snap",
+    slides: {
+      origin: "center",
+      perView: 1.2,
+      spacing: 16,
+    },
+    slideChanged(slider) {
+      setCurrentIndex(slider.track.details.rel);
+    },
+  });
 
-  detailsChanged(s) {
-    setCurrentSlide(s.track.details.rel);
-  },
-
-  created(slider) {
-    let timeout;
-    let mouseOver = false;
-
-    function clearNextTimeout() {
-      clearTimeout(timeout);
-    }
-
-    function nextTimeout() {
-      clearTimeout(timeout);
-      if (mouseOver) return;
-      timeout = setTimeout(() => slider.next(), 1800); // 👈 속도 ↑
-    }
-
-    slider.on("mouseover", () => {
-      mouseOver = true;
-      clearNextTimeout();
-    });
-
-    slider.on("mouseout", () => {
-      mouseOver = false;
-      nextTimeout();
-    });
-
-    slider.on("dragStarted", clearNextTimeout);
-    slider.on("animationEnded", nextTimeout);
-    slider.on("updated", nextTimeout);
-
-    nextTimeout();
-  },
-});
+  const current = slides[currentIndex] || slides[0];
 
   return (
-    <Wrapper>
-      {isOpen && <VoteAlert>현재 투표가 진행 중입니다</VoteAlert>}
+    <Page>
+      <TitleBlock>
+        <img src={awardBadge} alt="award" />
+        <h1>“{current?.title || "결과 집계 중"}”</h1>
+      </TitleBlock>
 
-      <SliderContainer ref={sliderRef} className="keen-slider">
-        {results.map((item, index) => (
-          <Slide
-            className="keen-slider__slide"
-            key={index}
-            isActive={currentSlide === index}
-          >
-            <AwardCard isActive={currentSlide === index}>
-              <StarIcon>🏆</StarIcon>
+      <Slider className="keen-slider" ref={sliderRef}>
+        {slides.map((item, index) => {
+          const active = index === currentIndex;
 
-              <SectionName>“{item.title}”</SectionName>
+          return (
+            <Slide className="keen-slider__slide" key={`${item.name}-${index}`}>
+              <Card $active={active}>
+                {item.profileImageUrl ? (
+                  <img src={item.profileImageUrl} alt={item.name} />
+                ) : (
+                  <Placeholder>결과 집계 중</Placeholder>
+                )}
+                <Overlay $active={active} />
+                <CardName $active={active}>{item.name}</CardName>
+                <CardPart $active={active}>{item.part || "Designer"}</CardPart>
+              </Card>
+            </Slide>
+          );
+        })}
+      </Slider>
 
-              <AwardImageWrapper>
-                <AwardGlow />
-                <AwardImage src={item.img} loading="lazy" />
-              </AwardImageWrapper>
-
-              <AwardName>{item.name}</AwardName>
-              <AwardRole>{item.role}</AwardRole>
-
-              <Description>{item.description}</Description>
-            </AwardCard>
-          </Slide>
-        ))}
-      </SliderContainer>
-
-      <Dots>
-        {results.map((_, i) => (
-          <Dot key={i} active={currentSlide === i} />
-        ))}
-      </Dots>
+      <Description>{current?.description}</Description>
 
       <BottomArea>
-        <BasicButton text="다음" onClick={onNext} />
+        <BasicButton text="확인" onClick={onNext} />
       </BottomArea>
-    </Wrapper>
+    </Page>
   );
 }
 
-const Wrapper = styled.div`
+const Page = styled.div`
   width: 100%;
-  padding: 28px 20px 120px;
-  position: relative;
+  min-height: var(--content-min-height);
+  padding: 28px 0 140px;
 `;
 
-const VoteAlert = styled.div`
-  width: 100%;
-  background: linear-gradient(135deg, #ff3e6c, #ff7a85);
-  color: white;
+const TitleBlock = styled.div`
+  width: 219px;
+  margin: 0 auto;
   text-align: center;
-  padding: 14px 0;
-  border-radius: 12px;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 16px;
+
+  img {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    margin: 0;
+    color: ${colors.textPrimary};
+    font-size: 2.8rem;
+    font-weight: 600;
+    line-height: 4.1rem;
+    letter-spacing: -0.07rem;
+  }
 `;
 
-const SliderContainer = styled.div`
-  margin-top: 10px;
+const Slider = styled.div`
+  margin-top: 32px;
+  padding: 0 20px;
 `;
 
 const Slide = styled.div`
   display: flex;
   justify-content: center;
-  transition: transform 0.25s ease-out;
-  transform: ${({ isActive }) =>
-    isActive ? "scale(1)" : "scale(0.9)"};
-  opacity: ${({ isActive }) => (isActive ? 1 : 0.5)};
 `;
 
-const AwardCard = styled.div`
-  text-align: center;
-  padding: 14px 6px;
-  transition: all 0.4s ease-out;
-  transform: ${({ isActive }) =>
-    isActive ? "translateY(0px)" : "translateY(6px)"};
-`;
+const Card = styled.div`
+  width: ${({ $active }) => ($active ? "275px" : "240px")};
+  height: ${({ $active }) => ($active ? "275px" : "240px")};
+  border-radius: ${({ $active }) => ($active ? "12px" : "9.6px")};
+  box-shadow: ${({ $active }) =>
+    $active ? "0 8px 24px rgba(0, 0, 0, 0.12)" : "0 3.491px 3.491px rgba(0, 0, 0, 0.12)"};
+  opacity: ${({ $active }) => ($active ? 1 : 0.14)};
+  position: relative;
+  overflow: hidden;
+  transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
 
-const StarIcon = styled.div`
-  font-size: 3.6rem;
-  margin: 18px 0 10px;
-  animation: pulse 1.8s infinite ease-in-out;
-
-  @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-    100% { transform: scale(1); }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 `;
 
-const SectionName = styled.h2`
-  font-size: 2.1rem;
-  font-weight: 800;
-  margin-bottom: 18px;
-`;
-
-const AwardImageWrapper = styled.div`
-  position: relative;
-  display: inline-block;
-`;
-
-const AwardGlow = styled.div`
+const Overlay = styled.div`
   position: absolute;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(rgba(255,215,0,0.35), transparent 70%);
-  top: 50%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: ${({ $active }) => ($active ? "146px" : "120px")};
+  background: ${({ $active }) =>
+    $active
+      ? "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%)"
+      : "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%)"};
+`;
+
+const CardName = styled.p`
+  margin: 0;
+  position: absolute;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
+  bottom: 38px;
+  color: ${colors.white};
+  font-size: ${({ $active }) => ($active ? "2.4rem" : "2rem")};
+  font-weight: 700;
+  line-height: ${({ $active }) => ($active ? "3.4rem" : "2.8rem")};
+  letter-spacing: -0.05rem;
+  white-space: nowrap;
 `;
 
-const AwardImage = styled.img`
-  width: 240px;
-  border-radius: 16px;
-  box-shadow: 0px 10px 22px rgba(0, 0, 0, 0.18);
+const CardPart = styled.p`
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 20px;
+  color: ${({ $active }) => ($active ? colors.white : "#eaeaea")};
+  font-size: ${({ $active }) => ($active ? "1.2rem" : "1rem")};
+  font-weight: 600;
+  line-height: ${({ $active }) => ($active ? "1.8rem" : "1.4rem")};
+  letter-spacing: -0.03rem;
+  white-space: nowrap;
 `;
 
-const AwardName = styled.div`
-  font-size: 2.2rem;
-  font-weight: 800;
-  margin-top: 14px;
-`;
-
-const AwardRole = styled.div`
+const Placeholder = styled.div`
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #d8d8d8;
+  color: ${colors.textGray};
   font-size: 1.5rem;
-  color: #777;
-  margin-top: 4px;
 `;
 
 const Description = styled.p`
-  color: #666;
+  width: 308px;
+  margin: 44px auto 0;
+  color: ${colors.textGray};
+  text-align: center;
   font-size: 1.4rem;
-  margin: 20px 0;
-`;
-
-const Dots = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 18px;
-`;
-
-const Dot = styled.div`
-  width: ${({ active }) => (active ? "18px" : "8px")};
-  height: 8px;
-  border-radius: 10px;
-  background: ${({ active }) =>
-    active ? "#ff2f6e" : "#d3d3d3"};
-  transition: all 0.3s ease;
+  font-weight: 400;
+  line-height: 2.9rem;
+  letter-spacing: -0.035rem;
 `;
 
 const BottomArea = styled.div`
   position: fixed;
-  bottom: 24px;
   left: 50%;
+  bottom: 50px;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 420px;
+  max-width: var(--app-width);
   padding: 0 20px;
 `;

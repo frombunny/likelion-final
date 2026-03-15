@@ -1,31 +1,38 @@
-import React, { useState } from "react";
-import SelectPage from "./SelectPage";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SelectPage from "./SelectPage";
 
-const PART_OPTIONS = ["기획", "디자인", "프론트엔드", "백엔드"];
-
-export default function SelectPart() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [part, setPart] = useState("");
-  const kakaoInfo = location.state?.kakaoInfo;
-  const PART_MAP = {
-  "기획": "PM",
-  "디자인": "DE",
-  "프론트엔드": "FE",
-  "백엔드": "BE",
+const options = ["기획", "디자인", "프론트엔드", "백엔드"];
+const partMap = {
+  기획: "PM",
+  디자인: "DE",
+  프론트엔드: "FE",
+  백엔드: "BE",
 };
 
+export default function SelectPart() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selected, setSelected] = useState("");
+
   return (
-  
     <SelectPage
-      title="어떤 트랙에 소속되어 있나요?"
+      title={"어떤 트랙에\n소속되어 있나요?"}
       description="아래에서 본인의 트랙을 선택해 주세요 :)"
-      options={PART_OPTIONS}
-      selected={part}
-      onSelect={setPart}
+      label="트랙"
+      placeholder="본인의 트랙을 선택해 주세요"
+      options={options}
+      selected={selected}
+      onSelect={setSelected}
       onSubmit={() => {
-        navigate("/signUp/role", { state: { part:PART_MAP[part], kakaoInfo: kakaoInfo } });
+        if (!selected) return;
+
+        navigate("/signUp/role", {
+          state: {
+            part: partMap[selected],
+            kakaoInfo: location.state?.kakaoInfo,
+          },
+        });
       }}
     />
   );

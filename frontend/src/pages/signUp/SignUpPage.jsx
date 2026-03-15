@@ -1,9 +1,24 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import styled from "styled-components";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
-import styled from "styled-components";
 import BasicButton from "../../shared/BasicButton";
 import colors from "../../styles/common/colors";
+
+const partLabel = {
+  PM: "기획",
+  DE: "디자인",
+  FE: "프론트엔드",
+  BE: "백엔드",
+};
+
+const roleLabel = {
+  ROLE_BABY_LION: "아기사자",
+  ROLE_EXECUTIVE: "운영진",
+  ROLE_PART_LEADER: "팀장",
+  ROLE_SUB_LEADER: "부대표",
+  ROLE_LEADER: "대표",
+};
 
 export default function SignUpPage() {
   const navigate = useNavigate();
@@ -13,114 +28,137 @@ export default function SignUpPage() {
   const part = location.state?.part;
   const role = location.state?.role;
 
-  const ROLE_LABEL = {
-    ROLE_BABY_LION: "아기사자",
-    ROLE_EXECUTIVE: "운영진",
-    ROLE_PART_LEADER: "파트 팀장",
-    ROLE_SUB_LEADER: "부대표",
-    ROLE_LEADER: "대표",
-  };
-
-  const PART_LABEL = {
-    PM: "기획",
-    DE: "디자인",
-    FE: "프론트엔드",
-    BE: "백엔드",
-  };
-  
-  const [name, setName] = useState(
-    kakaoInfo?.kakao_account?.profile?.nickname ?? ""
-  );
-  const [kakaoId] = useState(kakaoInfo?.id ?? null);
-  const [profileImageUrl] = useState(
-    kakaoInfo?.kakao_account?.profile?.profile_image_url ?? ""
-  );
-
-  const SIGNUP_API = import.meta.env.VITE_BACKEND_SIGNUP_URL;
+  const [name, setName] = useState(kakaoInfo?.kakao_account?.profile?.nickname || "");
 
   useEffect(() => {
     if (!kakaoInfo) {
-      alert("카카오 정보가 없습니다. 다시 로그인 해주세요.");
-      navigate("/login");
+      navigate("/login", { replace: true });
     }
   }, [kakaoInfo, navigate]);
 
-  const handleSignUp = () => {
+  const submitSignUp = () => {
+    const signupApi = import.meta.env.VITE_BACKEND_SIGNUP_URL;
+    if (!signupApi) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
     axios
-      .post(SIGNUP_API, {
-        name,
+      .post(signupApi, {
+        name: trimmedName,
         part,
         role,
-        kakaoId,
-        profileImageUrl,
+        kakaoId: kakaoInfo?.id,
+        profileImageUrl: kakaoInfo?.kakao_account?.profile?.profile_image_url,
       })
       .then(() => {
-        alert("회원가입 완료!");
-        navigate("/");
+        localStorage.setItem("userName", trimmedName);
+        navigate("/", { replace: true });
       })
-      .catch((err) => {
-        console.error("회원가입 실패:", err);
-        alert(
-          err.response?.data?.message || "회원가입 중 오류가 발생했습니다."
-        );
+      .catch((error) => {
+        console.error("회원가입 실패:", error);
       });
   };
 
   return (
-    <Wrapper>
-      <Title>회원가입</Title>
+    <Page>
+      <Title>회원가입 정보를 입력해 주세요</Title>
+      <Description>필수 정보를 확인하고 멋사의 밤을 시작해요 :)</Description>
 
-      <Label>이름</Label>
-      <Input value={name} onChange={(e) => setName(e.target.value)} />
-
-      <Label>트랙</Label>
-      <FixedBox>{PART_LABEL[part] ?? "알 수 없음"}</FixedBox>
-
-      <Label>직위</Label>
-      <FixedBox>{ROLE_LABEL[role] ?? "알 수 없음"}</FixedBox>
-
-      <ButtonArea>
-        <BasicButton
-          text="회원가입 완료"
-          disabled={!name || !kakaoId}
-          onClick={handleSignUp}
+      <FormGroup>
+        <Label>이름</Label>
+        <Input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="이름을 입력해 주세요"
+          maxLength={20}
+          autoFocus
         />
-      </ButtonArea>
-    </Wrapper>
+      </FormGroup>
+
+      <FormGroup>
+        <Label>트랙</Label>
+        <Readonly>{partLabel[part] || "선택되지 않음"}</Readonly>
+      </FormGroup>
+
+      <FormGroup>
+        <Label>직책</Label>
+        <Readonly>{roleLabel[role] || "선택되지 않음"}</Readonly>
+      </FormGroup>
+
+      <BottomArea>
+        <BasicButton text="완료" disabled={!name.trim()} onClick={submitSignUp} />
+      </BottomArea>
+    </Page>
   );
 }
 
-const Wrapper = styled.div`
-  padding: 28px 22px;
+const Page = styled.div`
+  width: 100%;
+  min-height: var(--content-min-height);
+  padding: 18px 20px 140px;
 `;
 
 const Title = styled.h1`
-  font-size: 2.4rem;
-  font-weight: 700;
-  margin-bottom: 28px;
-  color: ${colors.text_primary};
+  margin: 0;
+  color: ${colors.textPrimary};
+  font-size: 2.8rem;
+  font-weight: 600;
+  line-height: 4.1rem;
+  letter-spacing: -0.07rem;
+`;
+
+const Description = styled.p`
+  margin: 8px 0 0;
+  color: ${colors.textGray};
+  font-size: 1.4rem;
+  font-weight: 400;
+  line-height: 2rem;
+  letter-spacing: -0.035rem;
+`;
+
+const FormGroup = styled.div`
+  margin-top: 24px;
 `;
 
 const Label = styled.p`
-  font-size: 1.4rem;
-  margin: 18px 0 6px;
-  color: ${colors.text_gray};
+  margin: 0 0 8px 4px;
+  color: ${colors.textPrimary};
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 2.8rem;
+  letter-spacing: -0.045rem;
+`;
+
+const inputStyle = `
+  width: var(--content-width);
+  height: 52px;
+  border: 1px solid ${colors.border};
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 19px;
+  color: ${colors.textPrimary};
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 2.4rem;
+  letter-spacing: -0.04rem;
 `;
 
 const Input = styled.input`
-  width: 100%;
-  padding: 13px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  ${inputStyle}
 `;
 
-const FixedBox = styled.div`
-  width: 100%;
-  padding: 13px;
-  border-radius: 6px;
-  background: #f5f5f5;
+const Readonly = styled.div`
+  ${inputStyle}
+  display: flex;
+  align-items: center;
 `;
 
-const ButtonArea = styled.div`
-  margin-top: 40px;
+const BottomArea = styled.div`
+  position: fixed;
+  left: 50%;
+  bottom: 50px;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  padding: 0 20px;
 `;

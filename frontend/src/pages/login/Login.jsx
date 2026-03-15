@@ -1,85 +1,92 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import styled from "styled-components";
-import bgImage from "../../assets/login/loginBg.svg";
-import loginButton from "../../assets/login/kakaoLoginButton.svg";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import loginBg from "../../assets/login/loginBg.svg";
+import kakaoButton from "../../assets/login/kakaoLoginButton.svg";
 
 export default function Login() {
   const navigate = useNavigate();
 
-  const CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID;
-  const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
-  const BACKEND_LOGIN_URL = import.meta.env.VITE_BACKEND_LOGIN_URL;
+  const clientId = import.meta.env.VITE_KAKAO_CLIENT_ID;
+  const redirectUri = import.meta.env.VITE_KAKAO_REDIRECT_URI;
+  const loginApi = import.meta.env.VITE_BACKEND_LOGIN_URL;
 
-  const handleLogin = () => {
-    window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+  const moveKakaoAuth = () => {
+    window.location.href = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}`;
   };
 
   useEffect(() => {
     const code = new URL(window.location.href).searchParams.get("code");
+    if (!code || !loginApi) return;
 
-    if (!code) return;
+    const key = `kakao_login_code_${code}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
 
     axios
-      .post(BACKEND_LOGIN_URL, { code })
+      .post(loginApi, { code })
       .then((res) => {
-        const loginRes = res.data.data;
+        const payload = res.data?.data;
 
-        // 로그인 성공
-        if (loginRes.status === "LOGIN_SUCCESS") {
-          localStorage.setItem("accessToken", loginRes.accessToken);
-          navigate("/");
+        if (payload?.status === "LOGIN_SUCCESS") {
+          localStorage.setItem("accessToken", payload.accessToken || "");
+          localStorage.setItem("userName", payload.user?.name || "권기남");
+          navigate("/", { replace: true });
           return;
         }
 
-        // 회원가입 필요
-        if (loginRes.status === "SIGNUP_REQUIRED") {
+        if (payload?.status === "SIGNUP_REQUIRED") {
           navigate("/signUp", {
-            state: {
-              kakaoInfo: loginRes.kakaoInfo,
-            },
+            replace: true,
+            state: { kakaoInfo: payload.kakaoInfo },
           });
           return;
         }
 
-        console.error("예상치 못한 로그인 상태:", loginRes);
+        console.error("알 수 없는 로그인 응답:", payload);
       })
-      .catch((err) => {
-        console.error("로그인 통신 에러:", err);
+      .catch((error) => {
+        console.error("로그인 통신 에러:", error);
       });
-  }, []);
+  }, [loginApi, navigate]);
 
   return (
-    <LoginWrapper>
-      <LoginButton
-        src={loginButton}
-        alt="카카오 로그인"
-        onClick={handleLogin}
-      />
-    </LoginWrapper>
+    <Page>
+      <Background aria-hidden="true" />
+      <KakaoButton type="button" onClick={moveKakaoAuth} aria-label="카카오 로그인">
+        <img src={kakaoButton} alt="" aria-hidden="true" />
+      </KakaoButton>
+    </Page>
   );
 }
 
-const LoginWrapper = styled.div`
+const Page = styled.div`
   width: 100%;
-  height: 100vh;
-  flex: 1;
+  min-height: 100dvh;
   position: relative;
-
-  background-image: url(${bgImage});
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  overflow: hidden;
+  background: #0a1f3b;
 `;
 
-const LoginButton = styled.img`
-  width: 300px;
-  height: 60px;
+const Background = styled.div`
   position: absolute;
-  top: calc(100vh - 160px);
+  inset: 0;
+  background: url(${loginBg}) center/cover no-repeat;
+`;
+
+const KakaoButton = styled.button`
+  width: 188px;
+  height: 46px;
+  position: absolute;
   left: 50%;
+  bottom: 58px;
   transform: translateX(-50%);
-  z-index: 999;
   cursor: pointer;
+
+  img {
+    width: 188px;
+    height: 46px;
+    display: block;
+  }
 `;

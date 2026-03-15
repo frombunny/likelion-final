@@ -11,10 +11,26 @@ import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.service.VoteService;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.external.imageGeneration.service.ImageGenerationService;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,63 +45,56 @@ public class DocumentService {
     private final ImageGenerationService imageGenerationService;
 
     public GetAllDocumentsRes getDocumentListByUser(UserPrincipal userPrincipal) {
-        User user = userRepository.getReferenceById(userPrincipal.getId());
-
-        List<Document> documents = documentRepository.findAllByUser(user);
+        List<Document> documents = documentRepository.findAllByName(userPrincipal.getName());
         return GetAllDocumentsRes.from(documents);
     }
 
     @Transactional
     public void createAwards() {
-        Map<Sector, List<User>> winnersWithSector =
+        Map<Sector, List<String>> winnersWithSector =
                 Arrays.stream(Sector.values()).collect(
-                        Collectors.toMap(sector -> sector, voteService::findWinnersBySector)
+                        Collectors.toMap(sector -> sector, voteService::findWinnerNamesBySector)
                 );
 
-        winnersWithSector.forEach((sector, users) ->
-                users.forEach(user ->
-                        createDocument(user, getAwardTemplatePath(sector), DocumentType.AWARD))
+        winnersWithSector.forEach((sector, winnerNames) ->
+                winnerNames.forEach(name ->
+                        createDocument(name, getAwardTemplatePath(sector), DocumentType.AWARD))
         );
     }
 
     @Transactional
-    public void createCertificates() {
-        List<User> users = userRepository.findAll();
-
-        users.forEach(
-                user -> {
-                    String templatePath = getCertificateTemplatePath(user);
-                    createDocument(user, templatePath, DocumentType.CERTIFICATION);
-                }
-        );
+    public void createCertificates(String name, Role role) {
+        String templatePath = getCertificateTemplatePath(name, role);
+        createDocument(name, templatePath, DocumentType.CERTIFICATION);
     }
 
-    private void createDocument(User user, String path, DocumentType documentType) {
-        String imageUrl = imageGenerationService.writeOnDocument(path, user.getName(), documentType);
+    private void createDocument(String name, String path, DocumentType documentType) {
+        String imageUrl = imageGenerationService.writeOnDocument(path, name, documentType);
 
         Document document = Document.builder()
                 .documentType(documentType)
                 .imageUrl(imageUrl)
-                .user(user)
+                .name(name)
                 .build();
 
         documentRepository.save(document);
     }
 
-    private String getCertificateTemplatePath(User user) {
-        String part = user.getPart().toString();
-        String role = user.getRole().getPureName();
-        if (user.getRole().equals(Role.ROLE_LEADER) || user.getRole().equals(Role.ROLE_SUB_LEADER)) {
+    private String getCertificateTemplatePath(String name, Role role) {
+        if (role.equals(Role.ROLE_LEADER) || role.equals(Role.ROLE_SUB_LEADER)) {
             return String.format(
                     "static/document/certificate/%s.jpg",
                     role
+                            .getPureName()
             );
         }
 
+        User user = userRepository.getUserByName(name);
+
         return String.format(
                 "static/document/certificate/%s_%s.jpg",
-                part,
-                role
+                user.getPart(),
+                role.getPureName()
         );
     }
 

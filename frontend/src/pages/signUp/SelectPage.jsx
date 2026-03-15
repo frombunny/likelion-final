@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styled from "styled-components";
 import BasicButton from "../../shared/BasicButton";
 import colors from "../../styles/common/colors";
@@ -5,107 +6,151 @@ import colors from "../../styles/common/colors";
 export default function SelectPage({
   title,
   description,
+  label,
+  placeholder,
   options,
   selected,
   onSelect,
   onSubmit,
 }) {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (value) => {
+    onSelect(value);
+    setOpen(false);
+  };
+
   return (
-    <PageWrapper>
-      <TitleSection>
-        <Title>{title}</Title>
-        <SubTitle>{description}</SubTitle>
-      </TitleSection>
+    <Page>
+      <Title>{title}</Title>
+      <Description>{description}</Description>
 
-      <ScrollArea>
-        <OptionList>
-          {options.map((item) => (
-            <OptionItem
-              key={item}
-              onClick={() => onSelect(item)}
-              selected={item === selected}
-            >
-              {item}
-            </OptionItem>
+      <Label>{label}</Label>
+      <SelectButton type="button" onClick={() => setOpen((prev) => !prev)}>
+        <SelectText $active={Boolean(selected)}>{selected || placeholder}</SelectText>
+        <Arrow $open={open} />
+      </SelectButton>
+
+      {open && (
+        <OptionPanel>
+          {options.map((option) => (
+            <OptionButton key={option} type="button" onClick={() => handleSelect(option)}>
+              {option}
+            </OptionButton>
           ))}
-        </OptionList>
-      </ScrollArea>
+        </OptionPanel>
+      )}
 
-      <ButtonWrapper>
-        <BasicButton
-          text="완료"
-          disabled={!selected}
-          onClick={onSubmit}
-        />
-      </ButtonWrapper>
-    </PageWrapper>
+      <BottomArea>
+        <BasicButton text="완료" disabled={!selected} onClick={onSubmit} />
+      </BottomArea>
+    </Page>
   );
 }
 
-const PageWrapper = styled.div`
+const Page = styled.div`
   width: 100%;
-  height: calc(var(--vh) * 100);
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-`;
-
-const TitleSection = styled.div`
-  margin-top: 12px;s
+  min-height: var(--content-min-height);
+  padding: 18px 20px 140px;
+  position: relative;
 `;
 
 const Title = styled.h1`
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: ${colors.text_primary};
-  margin-bottom: 20px;
+  margin: 0;
+  white-space: pre-wrap;
+  color: ${colors.textPrimary};
+  font-size: 2.8rem;
+  font-weight: 600;
+  line-height: 4.1rem;
+  letter-spacing: -0.07rem;
 `;
 
-const SubTitle = styled.p`
+const Description = styled.p`
+  margin: 8px 0 0;
+  color: ${colors.textGray};
   font-size: 1.4rem;
-  color: ${colors.text_gray};
-  margin-bottom: 20px;
+  font-weight: 400;
+  line-height: 2rem;
+  letter-spacing: -0.035rem;
 `;
 
-const SelectBox = styled.div`
-  width: 100%;
-  border: 1px solid #ddd;
+const Label = styled.p`
+  margin: 32px 0 8px 4px;
+  color: ${colors.textPrimary};
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 2.8rem;
+  letter-spacing: -0.045rem;
+`;
+
+const SelectButton = styled.button`
+  width: var(--content-width);
+  height: 52px;
+  border: 1px solid ${colors.border};
   border-radius: 6px;
-  padding: 16px;
-  background: #fff;
-`;
-
-const SelectInput = styled.div`
-  font-size: 1.6rem;
-  color: ${colors.disable_gray};
-`;
-
-const ScrollArea = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding-bottom: 20px;
-`;
-
-const OptionList = styled.div`
+  background: transparent;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const OptionItem = styled.div`
-  padding: 14px 16px;
-  border-radius: 6px;
-  background: ${(props) => (props.selected ? colors.primary_blue : "#F5F5F5")};
-  color: ${(props) => (props.selected ? "#FFF" : colors.text_primary)};
-  font-size: 1.6rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 19px;
   cursor: pointer;
 `;
 
-const ButtonWrapper = styled.div`
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-  padding: 20px 0;
-  display: flex;
-  justify-content: center;
+const SelectText = styled.span`
+  width: 267px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: ${({ $active }) => ($active ? colors.textPrimary : colors.textGray)};
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 2.4rem;
+  letter-spacing: -0.04rem;
+  text-align: left;
+`;
+
+const Arrow = styled.span`
+  width: 13px;
+  height: 13px;
+  border-right: 1.8px solid ${colors.textPrimary};
+  border-bottom: 1.8px solid ${colors.textPrimary};
+  transform: ${({ $open }) => ($open ? "rotate(225deg)" : "rotate(45deg)")};
+  transition: transform 0.18s ease;
+`;
+
+const OptionPanel = styled.div`
+  width: var(--content-width);
+  margin-top: 12px;
+  border: 1px solid ${colors.border};
+  border-radius: 8px;
+  background: ${colors.white};
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+`;
+
+const OptionButton = styled.button`
+  width: 100%;
+  height: 52px;
+  padding: 0 20px;
+  text-align: left;
+  color: ${colors.textPrimary};
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 2.4rem;
+  letter-spacing: -0.04rem;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(2, 111, 255, 0.06);
+  }
+`;
+
+const BottomArea = styled.div`
+  position: fixed;
+  left: 50%;
+  bottom: 50px;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-width);
+  padding: 0 20px;
 `;

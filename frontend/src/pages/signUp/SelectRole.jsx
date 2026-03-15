@@ -1,33 +1,38 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import SelectPage from "./SelectPage";
-import { useNavigate, useLocation } from "react-router-dom";
 
-const ROLE_OPTIONS = ["아기사자", "운영진", "파트 팀장", "부대표", "대표"];
-const ROLE_MAP = {
-  "대표": "ROLE_LEADER",
-  "부대표": "ROLE_SUB_LEADER",
-  "파트 팀장": "ROLE_PART_LEADER",
-  "운영진": "ROLE_EXECUTIVE",
-  "아기사자": "ROLE_BABY_LION",
+const options = ["아기사자", "운영진", "팀장", "대표"];
+const roleMap = {
+  아기사자: "ROLE_BABY_LION",
+  운영진: "ROLE_EXECUTIVE",
+  팀장: "ROLE_PART_LEADER",
+  대표: "ROLE_LEADER",
 };
 
 export default function SelectRole() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [role, setRole] = useState("");
-  const kakaoInfo = location.state?.kakaoInfo;
-  const part = location.state?.part;
+  const [selected, setSelected] = useState("");
 
   return (
     <SelectPage
-      title="어떤 직책이신가요?"
-      description="아래에서 본인의 직책을 선택해 주세요!"
-      options={ROLE_OPTIONS}
-      selected={role}
-      onSelect={setRole}
+      title={"어떤 직책을\n맡고 있나요?"}
+      description="아래에서 본인의 직책을 선택해 주세요 :)"
+      label="트랙"
+      placeholder="본인의 직책 선택해 주세요"
+      options={options}
+      selected={selected}
+      onSelect={setSelected}
       onSubmit={() => {
+        if (!selected) return;
+
         navigate("/signUp/info", {
-          state: { part, role: ROLE_MAP[role], kakaoInfo },
+          state: {
+            part: location.state?.part,
+            role: roleMap[selected],
+            kakaoInfo: location.state?.kakaoInfo,
+          },
         });
       }}
     />

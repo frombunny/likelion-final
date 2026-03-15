@@ -1,6 +1,5 @@
 package com.likelion.last.domain.vote.service;
 
-import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.vote.entity.VoteWinner;
 import com.likelion.last.domain.vote.entity.enums.Sector;
 import com.likelion.last.domain.vote.repository.VoteWinnerRepository;
@@ -16,13 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class VoteService {
     private final VoteWinnerRepository voteWinnerRepository;
 
-    public List<User> findWinnersBySector(Sector sector) {
+    public List<String> findWinnerNamesBySector(Sector sector) {
         return voteWinnerRepository.findAllBySectorOrderByIdAsc(sector).stream()
-                .map(VoteWinner::getUser)
+                .map(VoteWinner::getName)
                 .toList();
     }
 
     public GetWinnersRes getWinnersBySector(Sector sector) {
-        return GetWinnersRes.from(findWinnersBySector(sector));
+        return GetWinnersRes.from(findWinnerNamesBySector(sector));
     }
 }

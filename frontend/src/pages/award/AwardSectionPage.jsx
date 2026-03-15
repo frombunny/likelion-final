@@ -1,64 +1,104 @@
-import { useParams, useNavigate } from "react-router-dom";
-import Award from "./Award";
-import { AWARD_CATEGORIES, SECTOR_TITLES } from "./awardCategories";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Award from "./Award";
+import AwardGate from "./AwardGate";
+import {
+  AWARD_CATEGORIES,
+  SECTOR_DESCRIPTIONS,
+  SECTOR_TITLES,
+} from "./awardCategories";
 
 export default function AwardSectionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [results, setResults] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
 
-  const API = import.meta.env.VITE_BACKEND_WINNERS_URL;
-  const STATUS_API = import.meta.env.VITE_BACKEND_VOTE_STATUS_URL;
+  const [loading, setLoading] = useState(true);
+  const [isVotingOpen, setIsVotingOpen] = useState(false);
+  const [winners, setWinners] = useState([]);
 
   useEffect(() => {
+    if (!AWARD_CATEGORIES.includes(id)) {
+      navigate(`/award/${AWARD_CATEGORIES[0]}`, { replace: true });
+      return;
+    }
+
     const token = localStorage.getItem("accessToken");
 
-    axios.get(STATUS_API, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
-      setIsOpen(res.data?.data?.isOpen ?? false);
-    })
-    .catch(() => setIsOpen(false));
-
-    axios
-      .get(`${API}?sector=${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+    Promise.all([
+      axios.get(import.meta.env.VITE_BACKEND_VOTE_STATUS_URL, {
+        headers: { Authorization: `Bearer ${token || ""}` },
+      }),
+      axios.get(`${import.meta.env.VITE_BACKEND_WINNERS_URL}?sector=${id}`, {
+        headers: { Authorization: `Bearer ${token || ""}` },
+      }),
+    ])
+      .then(([statusRes, winnerRes]) => {
+        setIsVotingOpen(statusRes.data?.data?.isOpen ?? false);
+        setWinners(winnerRes.data?.data?.winners || []);
       })
-      .then((res) => {
-        const winners = res.data?.data?.winners ?? [];
-
-        setResults(
-          winners.map((w) => ({
-            title: SECTOR_TITLES[id],
-            img: w.profileImageUrl,
-            name: w.name,
-            role: w.part,
-            description: ""
-          }))
-        );
+      .catch((error) => {
+        console.error("어워즈 조회 실패:", error);
+        setWinners([]);
       })
-      .catch((e) => console.error("수상자 조회 실패:", e));
-  }, [id]);
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [id, navigate]);
 
   const currentIndex = AWARD_CATEGORIES.indexOf(id);
   const isLast = currentIndex === AWARD_CATEGORIES.length - 1;
-  const nextId = !isLast ? AWARD_CATEGORIES[currentIndex + 1] : null;
 
-  if (results.length === 0) {
-    return <div style={{ padding: "40px", textAlign: "center" }}>로딩 중...</div>;
+  const results = useMemo(() => {
+    if (!winners.length) {
+      return [
+        {
+          name: "결과 집계 중",
+          part: "",
+          profileImageUrl: "",
+          title: SECTOR_TITLES[id],
+          description: SECTOR_DESCRIPTIONS[id],
+        },
+      ];
+    }
+
+    return winners.map((winner) => ({
+      ...winner,
+      title: SECTOR_TITLES[id],
+      description: SECTOR_DESCRIPTIONS[id],
+    }));
+  }, [id, winners]);
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "var(--content-min-height)",
+          padding: "48px 20px",
+          textAlign: "center",
+          color: "#8F8F8F",
+          fontSize: "1.5rem",
+        }}
+      >
+        불러오는 중...
+      </div>
+    );
+  }
+
+  if (isVotingOpen) {
+    return <AwardGate />;
   }
 
   return (
     <Award
       results={results}
-      isOpen={isOpen}
       onNext={() => {
-        if (!isLast) navigate(`/award/${nextId}`);
-        else navigate("/award/complete");
+        if (isLast) {
+          navigate("/");
+          return;
+        }
+
+        navigate(`/award/${AWARD_CATEGORIES[currentIndex + 1]}`);
       }}
     />
   );

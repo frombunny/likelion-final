@@ -1,7 +1,5 @@
 package com.likelion.last.domain.vote.web.dto;
 
-import com.likelion.last.domain.user.entity.User;
-import com.likelion.last.domain.user.entity.enums.Part;
 import java.util.List;
 
 public record GetWinnersRes(
@@ -9,25 +7,19 @@ public record GetWinnersRes(
         List<GetWinnerDetailRes> winners
 ) {
     public record GetWinnerDetailRes(
-            Long id,
-            String name,
-            Part part,
-            String profileImageUrl
+            String name
     ) {
-        public static GetWinnerDetailRes from(User user) {
+        public static GetWinnerDetailRes from(String name) {
             return new GetWinnerDetailRes(
-                    user.getId(),
-                    user.getName(),
-                    user.getPart(),
-                    user.getProfileImageUrl()
+                    name
             );
         }
     }
 
-    public static GetWinnersRes from(List<User> users) {
+    public static GetWinnersRes from(List<String> winnerNames) {
         return new GetWinnersRes(
-                users.size(),
-                users.stream().map(
+                winnerNames.size(),
+                winnerNames.stream().map(
                         GetWinnerDetailRes::from
                 ).toList()
         );
