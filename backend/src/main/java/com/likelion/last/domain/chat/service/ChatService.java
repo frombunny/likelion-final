@@ -26,7 +26,7 @@ public class ChatService {
     private final SimpMessagingTemplate simpMessagingTemplate;
 
     @Transactional
-    public void send(ChatMessageReq chatMessageReq, UserPrincipal userPrincipal) {
+    public ChatMessageRes send(ChatMessageReq chatMessageReq, UserPrincipal userPrincipal) {
         validate(chatMessageReq.message());
         User user = userRepository.getReferenceById(userPrincipal.getId());
 
@@ -34,6 +34,7 @@ public class ChatService {
 
         ChatMessageRes chatMessageRes = ChatMessageRes.of(user.getName(), user.getProfileImageUrl(), chatMessageReq);
         simpMessagingTemplate.convertAndSend("/sub/chat", chatMessageRes);
+        return chatMessageRes;
     }
 
     public GetAllChatsRes getAllChats() {

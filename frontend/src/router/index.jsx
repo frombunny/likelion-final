@@ -10,18 +10,21 @@ import SignUpPage from "../pages/signUp/SignUpPage";
 
 import Chat from "../pages/chat/Chat";
 
-import AwardGate from "../pages/award/AwardGate";
 import AwardSectionPage from "../pages/award/AwardSectionPage";
+import { AWARD_CATEGORIES } from "../pages/award/awardCategories";
 
 import CertificatePage from "../pages/certificate/CertificatePage";
+import RouteErrorPage from "../pages/common/RouteErrorPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <Home /> },
       { path: "login", element: <Login /> },
+      { path: "oauth/kakao/callback", element: <Login /> },
 
       { path: "signUp", element: <SelectPart /> },
       { path: "signUp/role", element: <SelectRole /> },
@@ -35,12 +38,13 @@ export const router = createBrowserRouter([
       {
         path: "award",
         children: [
-          { index: true, element: <AwardGate /> },
+          { index: true, element: <Navigate to={`/award/${AWARD_CATEGORIES[0]}`} replace /> },
           { path: ":id", element: <AwardSectionPage /> },
         ],
       },
 
       { path: "certificate", element: <CertificatePage /> },
+      { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
 ]);

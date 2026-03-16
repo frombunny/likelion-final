@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import colors from "../../styles/common/colors";
 import madeBy from "../../assets/common/madeBy.svg";
+import { API_ENDPOINTS, apiClient } from "../../lib/api";
 
 const MENUS = [
   { label: "멋사 피날레 톡", path: "/chat" },
@@ -11,7 +13,48 @@ const MENUS = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const userName = localStorage.getItem("userName") || "권기남";
+  const [userName, setUserName] = useState(localStorage.getItem("userName") || "권기남");
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    apiClient
+      .get(API_ENDPOINTS.me)
+      .then((res) => {
+        const user = res.data?.data;
+        if (!user) {
+          return;
+        }
+
+        localStorage.setItem("userName", user.name || "");
+        localStorage.setItem("profileImage", user.profileImageUrl || "");
+        setUserName(user.name || "권기남");
+      })
+      .catch((error) => {
+        console.error("내 정보 조회 실패:", error);
+        if (error.response?.status === 401) {
+          logout();
+          return;
+        }
+
+        // Older backend instances may not expose /api/users/me yet.
+        if (error.response?.status === 404) {
+          setUserName(localStorage.getItem("userName") || "권기남");
+        }
+      });
+    // navigate is stable from react-router and logout uses it.
+  }, [navigate]);
+
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("profileImage");
+    navigate("/login");
+  };
 
   return (
     <Page>
@@ -35,7 +78,7 @@ export default function Home() {
 
       <ServiceSection>
         <SectionLabel>서비스 이용</SectionLabel>
-        <LogoutButton type="button" onClick={() => navigate("/login")}>
+        <LogoutButton type="button" onClick={logout}>
           <Danger>로그아웃</Danger>
         </LogoutButton>
       </ServiceSection>

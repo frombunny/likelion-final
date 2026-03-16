@@ -61,7 +61,8 @@ public class ImageGenerationService {
                 throw new FileNotCreatedException();
             }
 
-            String key = s3Service.generateFileName(documentType.name(), "jpg");
+            String prefix = documentType == DocumentType.CERTIFICATION ? "CERTIFICATION" : "AWARDS";
+            String key = s3Service.generateFileName(prefix, username, "jpg");
             String url = s3Service.uploadFile(outputFile, key);
 
             outputFile.delete();
@@ -87,4 +88,3 @@ public class ImageGenerationService {
         }
     }
 }
-

@@ -1,20 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import Award from "./Award";
-import AwardGate from "./AwardGate";
 import {
   AWARD_CATEGORIES,
   SECTOR_DESCRIPTIONS,
   SECTOR_TITLES,
 } from "./awardCategories";
+import { API_ENDPOINTS, apiClient, resolveAssetUrl } from "../../lib/api";
 
 export default function AwardSectionPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [isVotingOpen, setIsVotingOpen] = useState(false);
   const [winners, setWinners] = useState([]);
 
   useEffect(() => {
@@ -23,18 +21,11 @@ export default function AwardSectionPage() {
       return;
     }
 
-    const token = localStorage.getItem("accessToken");
-
-    Promise.all([
-      axios.get(import.meta.env.VITE_BACKEND_VOTE_STATUS_URL, {
-        headers: { Authorization: `Bearer ${token || ""}` },
-      }),
-      axios.get(`${import.meta.env.VITE_BACKEND_WINNERS_URL}?sector=${id}`, {
-        headers: { Authorization: `Bearer ${token || ""}` },
-      }),
-    ])
-      .then(([statusRes, winnerRes]) => {
-        setIsVotingOpen(statusRes.data?.data?.isOpen ?? false);
+    apiClient
+      .get(API_ENDPOINTS.winners, {
+        params: { sector: id },
+      })
+      .then((winnerRes) => {
         setWinners(winnerRes.data?.data?.winners || []);
       })
       .catch((error) => {
@@ -64,6 +55,7 @@ export default function AwardSectionPage() {
 
     return winners.map((winner) => ({
       ...winner,
+      profileImageUrl: resolveAssetUrl(winner.imageUrl),
       title: SECTOR_TITLES[id],
       description: SECTOR_DESCRIPTIONS[id],
     }));
@@ -85,12 +77,9 @@ export default function AwardSectionPage() {
     );
   }
 
-  if (isVotingOpen) {
-    return <AwardGate />;
-  }
-
   return (
     <Award
+      key={id}
       results={results}
       onNext={() => {
         if (isLast) {

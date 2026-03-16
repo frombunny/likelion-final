@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
@@ -6,6 +6,7 @@ import sendButtonActivate from "../../assets/chat/sendButtonActivate.svg";
 import sendButtonDeactivate from "../../assets/chat/sendButtonDeactivate.svg";
 import boogie from "../../assets/common/boogie.svg";
 import colors from "../../styles/common/colors";
+import { API_ENDPOINTS, apiClient, getWsBaseUrl } from "../../lib/api";
 
 const FALLBACK_PROFILE =
   "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop";
@@ -15,14 +16,41 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState("");
 
   const listRef = useRef(null);
   const stompRef = useRef(null);
+  const userNameRef = useRef(localStorage.getItem("userName") || "");
 
-  const canSend = useMemo(() => connected && Boolean(message.trim()), [connected, message]);
+  const canSend = Boolean(message.trim());
 
   useEffect(() => {
-    const wsBase = import.meta.env.VITE_BACKEND_WS_URL;
+    apiClient
+      .get(API_ENDPOINTS.chats)
+      .then((res) => {
+        const chatList = res.data?.data?.chats || [];
+        setMessages(
+          chatList.map((item, index) => ({
+            id: `history-${index}`,
+            mine: item.senderName === userNameRef.current,
+            senderName: item.senderName || "",
+            text: item.message || "",
+            profile: item.senderProfileImage || FALLBACK_PROFILE,
+          }))
+        );
+      })
+      .catch((error) => {
+        console.error("채팅 내역 조회 실패:", error);
+        setMessages([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    const wsBase = getWsBaseUrl();
     if (!wsBase) return;
 
     const socket = new SockJS(`${wsBase}/ws`);
@@ -34,6 +62,7 @@ export default function Chat() {
       },
       onConnect: () => {
         setConnected(true);
+        setConnectionError("");
 
         client.subscribe("/sub/chat", (frame) => {
           try {
@@ -42,7 +71,8 @@ export default function Chat() {
               ...prev,
               {
                 id: `in-${Date.now()}-${Math.random()}`,
-                mine: false,
+                mine: payload.senderName === userNameRef.current,
+                senderName: payload.senderName || "",
                 text: payload.message || "",
                 profile: payload.senderProfileImage || FALLBACK_PROFILE,
               },
@@ -52,8 +82,13 @@ export default function Chat() {
           }
         });
       },
-      onWebSocketClose: () => setConnected(false),
-      onStompError: () => setConnected(false),
+      onWebSocketClose: () => {
+        setConnected(false);
+      },
+      onStompError: (frame) => {
+        setConnected(false);
+        setConnectionError(frame.headers.message || "실시간 연결에 실패했습니다.");
+      },
     });
 
     client.activate();
@@ -71,26 +106,29 @@ export default function Chat() {
 
   const send = () => {
     const text = message.trim();
-    if (!text || !connected) return;
+    if (!text) return;
 
-    const myProfile = localStorage.getItem("profileImage") || FALLBACK_PROFILE;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: `out-${Date.now()}`,
-        mine: true,
-        text,
-        profile: myProfile,
-      },
-    ]);
-
-    stompRef.current?.publish({
-      destination: "/pub/send",
-      body: JSON.stringify({ message: text }),
-    });
-
-    setMessage("");
+    apiClient
+      .post(API_ENDPOINTS.chats, { message: text })
+      .then((res) => {
+        const payload = res.data?.data;
+        if (!connected) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `rest-${Date.now()}-${Math.random()}`,
+              mine: true,
+              senderName: payload?.senderName || userNameRef.current,
+              text: payload?.message || text,
+              profile: payload?.senderProfileImage || FALLBACK_PROFILE,
+            },
+          ]);
+        }
+        setMessage("");
+      })
+      .catch((error) => {
+        console.error("채팅 전송 실패:", error);
+      });
   };
 
   const onKeyDown = (event) => {
@@ -102,22 +140,32 @@ export default function Chat() {
 
   return (
     <Page>
-      {messages.length === 0 && <Watermark src={boogie} alt="" aria-hidden="true" />}
+      {!loading && messages.length === 0 && <Watermark src={boogie} alt="" aria-hidden="true" />}
 
       <MessageList ref={listRef}>
+        {loading && <StatusText>불러오는 중...</StatusText>}
         {messages.map((item) => (
           <MessageRow key={item.id} mine={item.mine}>
             {!item.mine && <Avatar src={item.profile} alt="profile" />}
-            <Bubble>{item.text}</Bubble>
+            <MessageGroup mine={item.mine}>
+              <SenderName mine={item.mine}>{item.senderName}</SenderName>
+              <Bubble>{item.text}</Bubble>
+            </MessageGroup>
             {item.mine && <Avatar src={item.profile} alt="profile" />}
           </MessageRow>
         ))}
       </MessageList>
 
+      {!connected && (
+        <ConnectionText>
+          {connectionError || "실시간 연결이 불안정해 REST 방식으로 전송합니다."}
+        </ConnectionText>
+      )}
+
       <Composer>
         <Input
           value={message}
-          maxLength={36}
+          maxLength={300}
           placeholder="질문 내용을 작성해 주세요"
           onChange={(event) => setMessage(event.target.value)}
           onKeyDown={onKeyDown}
@@ -150,6 +198,13 @@ const MessageList = styled.div`
   gap: 20px;
 `;
 
+const StatusText = styled.p`
+  margin: auto 0;
+  color: ${colors.textGray};
+  text-align: center;
+  font-size: 1.5rem;
+`;
+
 const Watermark = styled.img`
   width: 250px;
   height: 250px;
@@ -169,6 +224,21 @@ const MessageRow = styled.div`
   justify-content: ${({ mine }) => (mine ? "flex-end" : "flex-start")};
 `;
 
+const MessageGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: ${({ mine }) => (mine ? "flex-end" : "flex-start")};
+  gap: 4px;
+`;
+
+const SenderName = styled.p`
+  margin: 0 4px;
+  color: ${colors.textGray};
+  font-size: 1.1rem;
+  line-height: 1.6rem;
+  text-align: ${({ mine }) => (mine ? "right" : "left")};
+`;
+
 const Avatar = styled.img`
   width: 36px;
   height: 36px;
@@ -179,13 +249,13 @@ const Avatar = styled.img`
 `;
 
 const Bubble = styled.div`
-  width: 221px;
-  min-height: 52px;
+  width: fit-content;
+  max-width: 221px;
   border: 1px solid ${colors.border};
   border-radius: 8px;
   background: ${colors.white};
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  padding: 8px 12px;
+  padding: 10px 12px;
   color: ${colors.textPrimary};
   font-size: 1.3rem;
   font-weight: 400;
@@ -206,6 +276,15 @@ const Composer = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+`;
+
+const ConnectionText = styled.p`
+  width: var(--content-width);
+  margin: 12px auto 0;
+  color: ${colors.textGray};
+  font-size: 1.2rem;
+  line-height: 1.7rem;
+  text-align: center;
 `;
 
 const Input = styled.input`

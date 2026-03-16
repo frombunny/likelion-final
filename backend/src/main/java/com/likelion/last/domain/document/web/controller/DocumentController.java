@@ -6,8 +6,11 @@ import com.likelion.last.domain.document.web.dto.GetAllDocumentsRes;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.response.SuccessResponse;
 import jakarta.validation.Valid;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +30,20 @@ public class DocumentController {
                                                                                     UserPrincipal userPrincipal) {
         GetAllDocumentsRes getAllDocumentsRes = documentService.getDocumentListByUser(userPrincipal);
         return ResponseEntity.status(HttpStatus.OK).body(SuccessResponse.from(getAllDocumentsRes));
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<byte[]> downloadAllDocuments(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    ) {
+        byte[] zippedDocuments = documentService.downloadAllDocuments(userPrincipal);
+        String fileName = "13기_" + userPrincipal.getName() + ".zip";
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename*=UTF-8''" + java.net.URLEncoder.encode(fileName, StandardCharsets.UTF_8))
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(zippedDocuments);
     }
 
     @PostMapping("/create")

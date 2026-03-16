@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SelectPage from "./SelectPage";
+import { loadPendingSignUp, savePendingSignUp } from "../../lib/pendingSignUp";
 
 const options = ["아기사자", "운영진", "팀장", "대표"];
 const roleMap = {
@@ -13,7 +14,18 @@ const roleMap = {
 export default function SelectRole() {
   const navigate = useNavigate();
   const location = useLocation();
+  const pendingSignUp = location.state ?? loadPendingSignUp();
   const [selected, setSelected] = useState("");
+
+  useEffect(() => {
+    if (!pendingSignUp?.kakaoInfo || !pendingSignUp?.code || !pendingSignUp?.part) {
+      navigate("/signUp", { replace: true });
+    }
+  }, [navigate, pendingSignUp]);
+
+  if (!pendingSignUp?.kakaoInfo || !pendingSignUp?.code || !pendingSignUp?.part) {
+    return null;
+  }
 
   return (
     <SelectPage
@@ -29,10 +41,15 @@ export default function SelectRole() {
 
         navigate("/signUp/info", {
           state: {
-            part: location.state?.part,
+            part: pendingSignUp?.part,
             role: roleMap[selected],
-            kakaoInfo: location.state?.kakaoInfo,
+            kakaoInfo: pendingSignUp?.kakaoInfo,
+            code: pendingSignUp?.code,
           },
+        });
+        savePendingSignUp({
+          ...(pendingSignUp ?? {}),
+          role: roleMap[selected],
         });
       }}
     />

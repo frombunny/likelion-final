@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import SelectPage from "./SelectPage";
+import { loadPendingSignUp, savePendingSignUp } from "../../lib/pendingSignUp";
 
 const options = ["기획", "디자인", "프론트엔드", "백엔드"];
 const partMap = {
@@ -13,7 +14,18 @@ const partMap = {
 export default function SelectPart() {
   const navigate = useNavigate();
   const location = useLocation();
+  const pendingSignUp = location.state ?? loadPendingSignUp();
   const [selected, setSelected] = useState("");
+
+  useEffect(() => {
+    if (!pendingSignUp?.kakaoInfo || !pendingSignUp?.code) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate, pendingSignUp]);
+
+  if (!pendingSignUp?.kakaoInfo || !pendingSignUp?.code) {
+    return null;
+  }
 
   return (
     <SelectPage
@@ -30,8 +42,13 @@ export default function SelectPart() {
         navigate("/signUp/role", {
           state: {
             part: partMap[selected],
-            kakaoInfo: location.state?.kakaoInfo,
+            kakaoInfo: pendingSignUp?.kakaoInfo,
+            code: pendingSignUp?.code,
           },
+        });
+        savePendingSignUp({
+          ...(pendingSignUp ?? {}),
+          part: partMap[selected],
         });
       }}
     />

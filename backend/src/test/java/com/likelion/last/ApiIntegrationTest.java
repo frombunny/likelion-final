@@ -24,6 +24,8 @@ import com.likelion.last.global.auth.oauth2.dto.KakaoTokenRes;
 import com.likelion.last.global.auth.oauth2.dto.KakaoUserInfoRes;
 import com.likelion.last.global.auth.oauth2.service.KakaoService;
 import com.likelion.last.global.external.imageGeneration.service.ImageGenerationService;
+import com.likelion.last.global.external.s3.S3Service;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +66,9 @@ class ApiIntegrationTest {
     @MockBean
     private ImageGenerationService imageGenerationService;
 
+    @MockBean
+    private S3Service s3Service;
+
     private User savedUser;
     private String bearerToken;
 
@@ -94,7 +99,9 @@ class ApiIntegrationTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.isSuccess").value(true));
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.name").value("새유저"));
     }
 
     @Test
@@ -119,7 +126,8 @@ class ApiIntegrationTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("LOGIN_SUCCESS"))
-                .andExpect(jsonPath("$.data.accessToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.name").value("테스트유저"));
     }
 
     @Test
@@ -140,17 +148,64 @@ class ApiIntegrationTest {
 
     @Test
     void 내_문서_조회_API_테스트() throws Exception {
-        documentRepository.save(Document.builder()
-                .name(savedUser.getName())
-                .documentType(DocumentType.CERTIFICATION)
-                .imageUrl("https://example.com/document.png")
-                .build());
+        given(s3Service.listCertificationUrlsByUserName("테스트유저"))
+                .willReturn(List.of("https://example.com/document.pdf"));
+        given(s3Service.listAwardUrlsByUserName("테스트유저"))
+                .willReturn(List.of("https://example.com/award.jpg"));
 
         mockMvc.perform(get("/api/documents")
                         .header("Authorization", bearerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.documents[0].documentType").value("CERTIFICATION"))
-                .andExpect(jsonPath("$.data.documents[0].imageUrl").value("https://example.com/document.png"));
+                .andExpect(jsonPath("$.data.documents[0].imageUrl").value("https://example.com/document.pdf"))
+                .andExpect(jsonPath("$.data.documents[1].documentType").value("AWARD"));
+    }
+
+    @Test
+    void 수상자가_아니면_상장을_반환하지_않는_문서_조회_API_테스트() throws Exception {
+        User nonWinner = userRepository.save(User.builder()
+                .name("비수상자")
+                .part(Part.FE)
+                .role(Role.ROLE_BABY_LION)
+                .kakaoId(5000L)
+                .profileImageUrl("https://example.com/non-winner.png")
+                .build());
+        String nonWinnerBearerToken = "Bearer " + jwtTokenProvider.createToken(nonWinner.getId());
+
+        given(s3Service.listCertificationUrlsByUserName("비수상자"))
+                .willReturn(List.of("https://example.com/non-winner-document.pdf"));
+
+        mockMvc.perform(get("/api/documents")
+                        .header("Authorization", nonWinnerBearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.documents[0].documentType").value("CERTIFICATION"))
+                .andExpect(jsonPath("$.data.documents.length()").value(1));
+    }
+
+    @Test
+    void 수상자인데_상장이_없으면_조회_시_자동_생성한다() throws Exception {
+        given(s3Service.listCertificationUrlsByUserName("테스트유저"))
+                .willReturn(List.of("https://example.com/document.pdf"));
+        given(s3Service.listAwardUrlsByUserName("테스트유저"))
+                .willReturn(List.of(), List.of("https://example.com/generated-award.png"));
+        given(imageGenerationService.writeOnDocument(anyString(), anyString(), org.mockito.ArgumentMatchers.any()))
+                .willReturn("https://example.com/generated-award.png");
+
+        mockMvc.perform(get("/api/documents")
+                        .header("Authorization", bearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.documents[1].documentType").value("AWARD"))
+                .andExpect(jsonPath("$.data.documents[1].imageUrl").value("https://example.com/generated-award.png"));
+    }
+
+    @Test
+    void 내_정보_조회_API_테스트() throws Exception {
+        mockMvc.perform(get("/api/users/me")
+                        .header("Authorization", bearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("테스트유저"))
+                .andExpect(jsonPath("$.data.part").value("BE"))
+                .andExpect(jsonPath("$.data.role").value("ROLE_BABY_LION"));
     }
 
     @Test
@@ -184,6 +239,11 @@ class ApiIntegrationTest {
 
     @Test
     void 분야별_수상자_조회_API_테스트() throws Exception {
+        given(s3Service.findWinnerImageUrl("최유성"))
+                .willReturn("https://example.com/winner.png");
+        given(s3Service.findWinnerImageUrl("박성훈"))
+                .willReturn("https://example.com/winner2.png");
+
         mockMvc.perform(get("/api/votes/winners")
                         .header("Authorization", bearerToken)
                         .param("sector", "VITALITY_AWARD"))
@@ -203,6 +263,22 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.data.count").value(1))
                 .andExpect(jsonPath("$.data.chats[0].senderName").value("테스트유저"))
                 .andExpect(jsonPath("$.data.chats[0].message").value("안녕하세요"));
+    }
+
+    @Test
+    void 채팅_전송_API_테스트() throws Exception {
+        mockMvc.perform(post("/api/chats")
+                        .with(csrf())
+                        .header("Authorization", bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "message": "반갑습니다"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.senderName").value("테스트유저"))
+                .andExpect(jsonPath("$.data.message").value("반갑습니다"));
     }
 
     @Test

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
-import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import BasicButton from "../../shared/BasicButton";
 import colors from "../../styles/common/colors";
+import { API_ENDPOINTS, apiClient } from "../../lib/api";
+import { clearPendingSignUp, loadPendingSignUp } from "../../lib/pendingSignUp";
 
 const partLabel = {
   PM: "기획",
@@ -23,40 +24,48 @@ const roleLabel = {
 export default function SignUpPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const pendingSignUp = location.state ?? loadPendingSignUp();
 
-  const kakaoInfo = location.state?.kakaoInfo;
-  const part = location.state?.part;
-  const role = location.state?.role;
+  const kakaoInfo = pendingSignUp?.kakaoInfo;
+  const part = pendingSignUp?.part;
+  const role = pendingSignUp?.role;
 
   const [name, setName] = useState(kakaoInfo?.kakao_account?.profile?.nickname || "");
 
   useEffect(() => {
-    if (!kakaoInfo) {
+    if (!kakaoInfo || !part || !role) {
       navigate("/login", { replace: true });
     }
-  }, [kakaoInfo, navigate]);
+  }, [kakaoInfo, navigate, part, role]);
 
-  const submitSignUp = () => {
-    const signupApi = import.meta.env.VITE_BACKEND_SIGNUP_URL;
-    if (!signupApi) return;
+  const submitSignUp = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
-    axios
-      .post(signupApi, {
+    try {
+      const signUpResponse = await apiClient.post(API_ENDPOINTS.signUp, {
         name: trimmedName,
         part,
         role,
         kakaoId: kakaoInfo?.id,
         profileImageUrl: kakaoInfo?.kakao_account?.profile?.profile_image_url,
-      })
-      .then(() => {
-        localStorage.setItem("userName", trimmedName);
-        navigate("/", { replace: true });
-      })
-      .catch((error) => {
-        console.error("회원가입 실패:", error);
       });
+
+      const payload = signUpResponse.data?.data;
+      const accessToken = payload?.accessToken;
+      const signedUpUser = payload?.user;
+
+      localStorage.setItem("accessToken", accessToken || "");
+      localStorage.setItem("userName", signedUpUser?.name || trimmedName);
+      localStorage.setItem(
+        "profileImage",
+        signedUpUser?.profileImageUrl || kakaoInfo?.kakao_account?.profile?.profile_image_url || ""
+      );
+      clearPendingSignUp();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("회원가입 실패:", error);
+    }
   };
 
   return (

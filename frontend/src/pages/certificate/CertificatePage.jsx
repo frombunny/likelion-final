@@ -1,26 +1,19 @@
 import { useEffect, useState } from "react";
 import Certificate from "./Certificate";
+import { API_ENDPOINTS, apiClient, resolveAssetUrl } from "../../lib/api";
 
 export default function CertificatePage() {
-  const apiBase = import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_URL;
-  const [loading, setLoading] = useState(Boolean(apiBase));
+  const [loading, setLoading] = useState(true);
   const [certificates, setCertificates] = useState([]);
 
   useEffect(() => {
-    if (!apiBase) return;
-
-    fetch(`${apiBase}/documents`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((json) => {
-        const docs = json?.data?.documents || [];
+    apiClient
+      .get(API_ENDPOINTS.documents)
+      .then((res) => {
+        const docs = res.data?.data?.documents || [];
         setCertificates(
           docs.map((doc) => ({
-            url: doc.imageUrl,
+            url: resolveAssetUrl(doc.imageUrl),
             type: doc.documentType,
           }))
         );
@@ -32,7 +25,7 @@ export default function CertificatePage() {
       .finally(() => {
         setLoading(false);
       });
-  }, [apiBase]);
+  }, []);
 
   return <Certificate loading={loading} certificates={certificates} />;
 }

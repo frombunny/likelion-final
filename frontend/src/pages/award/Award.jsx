@@ -1,28 +1,30 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
-import { useKeenSlider } from "keen-slider/react";
-import "keen-slider/keen-slider.min.css";
 import BasicButton from "../../shared/BasicButton";
 import awardBadge from "../../assets/vote/awardBadge.svg";
 import colors from "../../styles/common/colors";
 
 export default function Award({ results, onNext }) {
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const slides = useMemo(() => results || [], [results]);
 
-  const [sliderRef] = useKeenSlider({
-    loop: false,
-    mode: "snap",
-    slides: {
-      origin: "center",
-      perView: 1.2,
-      spacing: 16,
-    },
-    slideChanged(slider) {
-      setCurrentIndex(slider.track.details.rel);
-    },
-  });
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [slides]);
+
+  useEffect(() => {
+    if (slides.length <= 1) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    }, 2000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [slides.length]);
 
   const current = slides[currentIndex] || slides[0];
 
@@ -33,26 +35,54 @@ export default function Award({ results, onNext }) {
         <h1>“{current?.title || "결과 집계 중"}”</h1>
       </TitleBlock>
 
-      <Slider className="keen-slider" ref={sliderRef}>
-        {slides.map((item, index) => {
-          const active = index === currentIndex;
+      <Viewer>
+        <NavButton
+          type="button"
+          onClick={() =>
+            setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
+          }
+          disabled={slides.length <= 1}
+        >
+          ‹
+        </NavButton>
 
-          return (
-            <Slide className="keen-slider__slide" key={`${item.name}-${index}`}>
-              <Card $active={active}>
-                {item.profileImageUrl ? (
-                  <img src={item.profileImageUrl} alt={item.name} />
-                ) : (
-                  <Placeholder>결과 집계 중</Placeholder>
-                )}
-                <Overlay $active={active} />
-                <CardName $active={active}>{item.name}</CardName>
-                <CardPart $active={active}>{item.part || "Designer"}</CardPart>
-              </Card>
-            </Slide>
-          );
-        })}
-      </Slider>
+        <CardShell>
+          <Card>
+            {current?.profileImageUrl ? (
+              <img src={current.profileImageUrl} alt={current.name} />
+            ) : (
+              <Placeholder>결과 집계 중</Placeholder>
+            )}
+            <Overlay />
+            <CardName>{current?.name}</CardName>
+            {current?.part ? <CardPart>{current.part}</CardPart> : null}
+          </Card>
+        </CardShell>
+
+        <NavButton
+          type="button"
+          onClick={() =>
+            setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
+          }
+          disabled={slides.length <= 1}
+        >
+          ›
+        </NavButton>
+      </Viewer>
+
+      {slides.length > 1 && (
+        <IndicatorRow>
+          {slides.map((item, index) => (
+            <Indicator
+              key={`${item.name}-${index}`}
+              type="button"
+              $active={index === currentIndex}
+              onClick={() => setCurrentIndex(index)}
+              aria-label={`${index + 1}번째 수상자 보기`}
+            />
+          ))}
+        </IndicatorRow>
+      )}
 
       <Description>{current?.description}</Description>
 
@@ -70,7 +100,7 @@ const Page = styled.div`
 `;
 
 const TitleBlock = styled.div`
-  width: 219px;
+  width: min(280px, calc(100% - 40px));
   margin: 0 auto;
   text-align: center;
 
@@ -87,29 +117,43 @@ const TitleBlock = styled.div`
     font-weight: 600;
     line-height: 4.1rem;
     letter-spacing: -0.07rem;
+    white-space: normal;
+    word-break: keep-all;
   }
 `;
 
-const Slider = styled.div`
+const Viewer = styled.div`
   margin-top: 32px;
-  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 `;
 
-const Slide = styled.div`
+const NavButton = styled.button`
+  width: 28px;
+  height: 28px;
+  color: ${({ disabled }) => (disabled ? "#d0d0d0" : colors.textGray)};
+  font-size: 2.4rem;
+  line-height: 1;
+  cursor: ${({ disabled }) => (disabled ? "default" : "pointer")};
+`;
+
+const CardShell = styled.div`
+  width: 275px;
+  height: 275px;
   display: flex;
+  align-items: center;
   justify-content: center;
 `;
 
 const Card = styled.div`
-  width: ${({ $active }) => ($active ? "275px" : "240px")};
-  height: ${({ $active }) => ($active ? "275px" : "240px")};
-  border-radius: ${({ $active }) => ($active ? "12px" : "9.6px")};
-  box-shadow: ${({ $active }) =>
-    $active ? "0 8px 24px rgba(0, 0, 0, 0.12)" : "0 3.491px 3.491px rgba(0, 0, 0, 0.12)"};
-  opacity: ${({ $active }) => ($active ? 1 : 0.14)};
+  width: 275px;
+  height: 275px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   position: relative;
   overflow: hidden;
-  transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
 
   img {
     width: 100%;
@@ -123,11 +167,8 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  height: ${({ $active }) => ($active ? "146px" : "120px")};
-  background: ${({ $active }) =>
-    $active
-      ? "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%)"
-      : "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%)"};
+  height: 146px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
 `;
 
 const CardName = styled.p`
@@ -137,9 +178,9 @@ const CardName = styled.p`
   transform: translateX(-50%);
   bottom: 38px;
   color: ${colors.white};
-  font-size: ${({ $active }) => ($active ? "2.4rem" : "2rem")};
+  font-size: 2.4rem;
   font-weight: 700;
-  line-height: ${({ $active }) => ($active ? "3.4rem" : "2.8rem")};
+  line-height: 3.4rem;
   letter-spacing: -0.05rem;
   white-space: nowrap;
 `;
@@ -150,10 +191,10 @@ const CardPart = styled.p`
   left: 50%;
   transform: translateX(-50%);
   bottom: 20px;
-  color: ${({ $active }) => ($active ? colors.white : "#eaeaea")};
-  font-size: ${({ $active }) => ($active ? "1.2rem" : "1rem")};
+  color: ${colors.white};
+  font-size: 1.2rem;
   font-weight: 600;
-  line-height: ${({ $active }) => ($active ? "1.8rem" : "1.4rem")};
+  line-height: 1.8rem;
   letter-spacing: -0.03rem;
   white-space: nowrap;
 `;
@@ -168,15 +209,31 @@ const Placeholder = styled.div`
   font-size: 1.5rem;
 `;
 
+const IndicatorRow = styled.div`
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const Indicator = styled.button`
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: ${({ $active }) => ($active ? colors.primaryBlue : "#d9d9d9")};
+`;
+
 const Description = styled.p`
-  width: 308px;
-  margin: 44px auto 0;
-  color: ${colors.textGray};
+  width: min(312px, calc(100% - 40px));
+  margin: 36px auto 0;
+  color: ${colors.textPrimary};
   text-align: center;
-  font-size: 1.4rem;
-  font-weight: 400;
-  line-height: 2.9rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 2.5rem;
   letter-spacing: -0.035rem;
+  word-break: keep-all;
+  white-space: pre-line;
 `;
 
 const BottomArea = styled.div`

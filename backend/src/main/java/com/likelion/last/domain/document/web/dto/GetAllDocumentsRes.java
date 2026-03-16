@@ -2,6 +2,7 @@ package com.likelion.last.domain.document.web.dto;
 
 import com.likelion.last.domain.document.entity.Document;
 import com.likelion.last.domain.document.entity.enums.DocumentType;
+import java.util.ArrayList;
 import java.util.List;
 
 public record GetAllDocumentsRes(
@@ -27,5 +28,18 @@ public record GetAllDocumentsRes(
                         .map(GetOneDocumentRes::from)
                         .toList()
         );
+    }
+
+    public static GetAllDocumentsRes fromUrls(List<String> certificationUrls, List<String> awardUrls) {
+        List<GetOneDocumentRes> documents = new ArrayList<>();
+
+        documents.addAll(certificationUrls.stream()
+                .map(url -> new GetOneDocumentRes(null, DocumentType.CERTIFICATION, url))
+                .toList());
+        documents.addAll(awardUrls.stream()
+                .map(url -> new GetOneDocumentRes(null, DocumentType.AWARD, url))
+                .toList());
+
+        return new GetAllDocumentsRes(documents);
     }
 }

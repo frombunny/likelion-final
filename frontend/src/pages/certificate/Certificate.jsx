@@ -1,40 +1,33 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
-import { useKeenSlider } from "keen-slider/react";
-import "keen-slider/keen-slider.min.css";
 import BasicButton from "../../shared/BasicButton";
 import colors from "../../styles/common/colors";
 import firework from "../../assets/certificate/firework.svg";
 import celeb from "../../assets/certificate/celeb.svg";
+import { API_ENDPOINTS, apiClient } from "../../lib/api";
 
 export default function Certificate({ loading, certificates }) {
   const [index, setIndex] = useState(0);
 
   const docs = useMemo(() => certificates || [], [certificates]);
 
-  const [sliderRef] = useKeenSlider({
-    loop: docs.length > 1,
-    mode: "snap",
-    slides: {
-      perView: 1,
-      origin: "center",
-    },
-    slideChanged(slider) {
-      setIndex(slider.track.details.rel);
-    },
-  });
+  useEffect(() => {
+    setIndex(0);
+  }, [docs]);
 
   const download = async () => {
-    const current = docs[index];
-    if (!current?.url) return;
+    if (!docs.length) return;
 
     try {
-      const response = await fetch(current.url, { mode: "cors" });
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
+      const response = await apiClient.get(API_ENDPOINTS.downloadDocuments, {
+        responseType: "blob",
+      });
+      const objectUrl = URL.createObjectURL(response.data);
+      const userName = localStorage.getItem("userName") || "documents";
+      const downloadFileName = `13기_${userName}.zip`;
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = `certificate_${index + 1}.png`;
+      link.download = downloadFileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -54,21 +47,55 @@ export default function Certificate({ loading, certificates }) {
       {loading ? (
         <Placeholder>불러오는 중...</Placeholder>
       ) : docs.length ? (
-        <Slider className="keen-slider" ref={sliderRef}>
-          {docs.map((item) => (
-            <Slide className="keen-slider__slide" key={item.url}>
-              <DocFrame>
-                <img src={item.url} alt="certificate" />
-              </DocFrame>
-            </Slide>
-          ))}
-        </Slider>
+        <>
+          <Viewer>
+            {docs.length > 1 && (
+              <NavButton
+                type="button"
+                onClick={() => setIndex((prev) => (prev === 0 ? docs.length - 1 : prev - 1))}
+              >
+                ‹
+              </NavButton>
+            )}
+
+            <DocFrame>
+              {docs[index]?.url.toLowerCase().includes(".pdf") ? (
+                <PdfFrame title="certificate pdf" src={docs[index].url} />
+              ) : (
+                <img src={docs[index]?.url} alt="certificate" />
+              )}
+            </DocFrame>
+
+            {docs.length > 1 && (
+              <NavButton
+                type="button"
+                onClick={() => setIndex((prev) => (prev + 1) % docs.length)}
+              >
+                ›
+              </NavButton>
+            )}
+          </Viewer>
+
+          {docs.length > 1 && (
+            <IndicatorRow>
+              {docs.map((item, dotIndex) => (
+                <Indicator
+                  key={item.url}
+                  type="button"
+                  $active={dotIndex === index}
+                  onClick={() => setIndex(dotIndex)}
+                  aria-label={`문서 ${dotIndex + 1} 보기`}
+                />
+              ))}
+            </IndicatorRow>
+          )}
+        </>
       ) : (
         <Placeholder>발급 가능한 수료증이 없습니다.</Placeholder>
       )}
 
       <BottomArea>
-        <BasicButton text="수료증 다운로드" disabled={!docs.length} onClick={download} />
+        <BasicButton text="수료증 및 상장 다운로드" disabled={!docs.length} onClick={download} />
       </BottomArea>
     </Page>
   );
@@ -98,13 +125,12 @@ const Celeb = styled.img`
   width: 240px;
 `;
 
-const Slider = styled.div`
+const Viewer = styled.div`
   width: 100%;
-`;
-
-const Slide = styled.div`
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 8px;
 `;
 
 const DocFrame = styled.div`
@@ -121,6 +147,35 @@ const DocFrame = styled.div`
     height: 100%;
     object-fit: cover;
   }
+`;
+
+const PdfFrame = styled.iframe`
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: ${colors.white};
+`;
+
+const NavButton = styled.button`
+  width: 28px;
+  height: 28px;
+  color: ${colors.textGray};
+  font-size: 2.4rem;
+  line-height: 1;
+`;
+
+const IndicatorRow = styled.div`
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+`;
+
+const Indicator = styled.button`
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: ${({ $active }) => ($active ? colors.primaryBlue : "#d9d9d9")};
 `;
 
 const Placeholder = styled.div`

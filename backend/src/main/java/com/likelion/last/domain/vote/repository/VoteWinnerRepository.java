@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface VoteWinnerRepository extends JpaRepository<VoteWinner, Long> {
     List<VoteWinner> findAllBySectorOrderByIdAsc(Sector sector);
+
+    List<VoteWinner> findAllByNameOrderByIdAsc(String name);
 }
