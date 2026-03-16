@@ -2,7 +2,6 @@ package com.likelion.last.domain.chat.web.controller;
 
 import com.likelion.last.domain.chat.service.ChatService;
 import com.likelion.last.domain.chat.web.dto.ChatMessageReq;
-import com.likelion.last.domain.chat.web.dto.ChatMessageRes;
 import com.likelion.last.domain.chat.web.dto.GetAllChatsRes;
 import com.likelion.last.global.auth.entity.UserPrincipal;
 import com.likelion.last.global.auth.exception.UnauthorizedException;

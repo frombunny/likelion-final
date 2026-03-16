@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
@@ -40,7 +41,7 @@ public class KakaoService {
                     .retrieve()
                     .onStatus(
                             HttpStatusCode::isError,
-                            response -> response.createException()
+                            ClientResponse::createException
                     )
                     .bodyToMono(KakaoTokenRes.class)
                     .block();
@@ -59,7 +60,7 @@ public class KakaoService {
                     .retrieve()
                     .onStatus(
                             HttpStatusCode::isError,
-                            response -> response.createException()
+                            ClientResponse::createException
                     )
                     .bodyToMono(KakaoUserInfoRes.class)
                     .block();

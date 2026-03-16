@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/users/login").permitAll()
                         .requestMatchers("/api/users").permitAll()
+                        .requestMatchers("/api/test/token").permitAll()
                         .requestMatchers("/api/documents/create").permitAll()
                         .requestMatchers("/api/documents/create/awards").permitAll()
                         .anyRequest().authenticated()

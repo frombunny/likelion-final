@@ -1,7 +1,6 @@
 package com.likelion.last.domain.vote.entity;
 
 import com.likelion.last.domain.vote.entity.enums.Sector;
-import com.likelion.last.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "vote_winners")
-public class VoteWinner extends BaseEntity {
+public class VoteWinner {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

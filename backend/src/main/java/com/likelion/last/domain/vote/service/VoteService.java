@@ -22,6 +22,7 @@ public class VoteService {
     }
 
     public GetWinnersRes getWinnersBySector(Sector sector) {
-        return GetWinnersRes.from(findWinnerNamesBySector(sector));
+        List<VoteWinner> winners = voteWinnerRepository.findAllBySectorOrderByIdAsc(sector);
+        return GetWinnersRes.from(winners);
     }
 }

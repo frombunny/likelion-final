@@ -3,15 +3,14 @@ package com.likelion.last.domain.user.service;
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.exception.UserAlreadyExistException;
 import com.likelion.last.domain.user.repository.UserRepository;
-import com.likelion.last.domain.user.web.dto.GetAllUserRes;
 import com.likelion.last.domain.user.web.dto.LoginReq;
 import com.likelion.last.domain.user.web.dto.LoginRes;
 import com.likelion.last.domain.user.web.dto.SignUpReq;
+import com.likelion.last.domain.user.web.dto.TestTokenRes;
 import com.likelion.last.global.auth.JwtTokenProvider;
 import com.likelion.last.global.auth.oauth2.service.KakaoService;
 import com.likelion.last.global.auth.oauth2.dto.KakaoTokenRes;
 import com.likelion.last.global.auth.oauth2.dto.KakaoUserInfoRes;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -48,8 +47,9 @@ public class UserService {
         return LoginRes.success(jwt);
     }
 
-    public GetAllUserRes getAllUsers() {
-        List<User> users = userRepository.findAllByOrderByRoleAscPartAscNameAsc();
-        return GetAllUserRes.from(users);
+    public TestTokenRes createTestToken(Long userId) {
+        User user = userRepository.getUserById(userId);
+        String jwt = jwtTokenProvider.createToken(user.getId());
+        return TestTokenRes.of(user.getId(), jwt);
     }
 }

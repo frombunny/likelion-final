@@ -1,9 +1,7 @@
 package com.likelion.last.global.exception;
 
-import com.likelion.last.domain.user.exception.UserNotFoundException;
 import com.likelion.last.global.response.ErrorResponse;
 import com.likelion.last.global.response.code.GlobalErrorResponseCode;
-import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
