@@ -6,6 +6,28 @@ import firework from "../../assets/certificate/firework.svg";
 import celeb from "../../assets/certificate/celeb.svg";
 import { API_ENDPOINTS, apiClient } from "../../lib/api";
 
+const MOBILE_USER_AGENT_PATTERN =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+
+const getDownloadFileName = (headers, fallbackName) => {
+  const contentDisposition = headers?.["content-disposition"] || headers?.["Content-Disposition"];
+
+  if (!contentDisposition) {
+    return fallbackName;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const asciiMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  return asciiMatch?.[1] || fallbackName;
+};
+
+const isMobileBrowser = () =>
+  typeof navigator !== "undefined" && MOBILE_USER_AGENT_PATTERN.test(navigator.userAgent);
+
 export default function Certificate({ loading, certificates }) {
   const [index, setIndex] = useState(0);
 
@@ -22,16 +44,44 @@ export default function Certificate({ loading, certificates }) {
       const response = await apiClient.get(API_ENDPOINTS.downloadDocuments, {
         responseType: "blob",
       });
-      const objectUrl = URL.createObjectURL(response.data);
       const userName = localStorage.getItem("userName") || "documents";
-      const downloadFileName = `13기_${userName}.zip`;
+      const fallbackFileName = `13기_${userName}.zip`;
+      const downloadFileName = getDownloadFileName(response.headers, fallbackFileName);
+      const file = new File([response.data], downloadFileName, {
+        type: response.data.type || "application/zip",
+      });
+
+      if (
+        isMobileBrowser() &&
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: downloadFileName,
+          });
+          return;
+        } catch (shareError) {
+          if (shareError?.name === "AbortError") {
+            return;
+          }
+        }
+      }
+
+      const objectUrl = URL.createObjectURL(response.data);
       const link = document.createElement("a");
       link.href = objectUrl;
       link.download = downloadFileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(objectUrl);
+
+      // Safari/WebView can cancel the download if the blob URL is revoked immediately.
+      window.setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 60_000);
     } catch (error) {
       console.error("다운로드 실패:", error);
     }
