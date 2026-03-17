@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/token").permitAll()
                         .requestMatchers("/api/documents/create").permitAll()
                         .requestMatchers("/api/documents/create/awards").permitAll()
+                        .requestMatchers("/api/documents/create/awards/sector").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)

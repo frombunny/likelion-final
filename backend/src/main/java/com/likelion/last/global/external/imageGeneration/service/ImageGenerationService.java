@@ -3,6 +3,7 @@ package com.likelion.last.global.external.imageGeneration.service;
 import com.likelion.last.domain.document.entity.enums.DocumentType;
 import com.likelion.last.global.external.imageGeneration.exception.FileNotCreatedException;
 import com.likelion.last.global.external.imageGeneration.exception.FontNotLoadedException;
+import com.likelion.last.global.external.imageGeneration.exception.ImageGenerationDisabledException;
 import com.likelion.last.global.external.s3.S3Service;
 import java.awt.Color;
 import java.awt.Font;
@@ -14,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +24,14 @@ import org.springframework.stereotype.Service;
 public class ImageGenerationService {
 
     private final S3Service s3Service;
+    @Value("${app.document.image-generation.enabled:true}")
+    private boolean imageGenerationEnabled;
 
     public String writeOnDocument(String templatePath, String username, DocumentType documentType) {
+        if (!imageGenerationEnabled) {
+            throw new ImageGenerationDisabledException();
+        }
+
         try {
             ClassPathResource resource = new ClassPathResource(templatePath);
             System.out.println("exists? " + resource.exists());
@@ -73,6 +81,10 @@ public class ImageGenerationService {
             throw new FileNotCreatedException();
         }
 
+    }
+
+    public boolean isImageGenerationEnabled() {
+        return imageGenerationEnabled;
     }
 
     private void applyQuality(Graphics2D graphics2D) {

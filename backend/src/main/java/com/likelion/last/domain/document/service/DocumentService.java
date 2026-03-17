@@ -3,6 +3,7 @@ package com.likelion.last.domain.document.service;
 import com.likelion.last.domain.document.entity.Document;
 import com.likelion.last.domain.document.entity.enums.DocumentType;
 import com.likelion.last.domain.document.repository.DocumentRepository;
+import com.likelion.last.domain.document.web.dto.CreateAwardsBySectorRes;
 import com.likelion.last.domain.document.web.dto.GetAllDocumentsRes;
 import com.likelion.last.domain.user.entity.User;
 import com.likelion.last.domain.user.entity.enums.Role;
@@ -17,8 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -43,7 +44,7 @@ public class DocumentService {
         return GetAllDocumentsRes.fromUrls(certificationUrls, awardUrls);
     }
 
-    public byte[] downloadAllDocuments(UserPrincipal userPrincipal) {
+    public void downloadAllDocuments(UserPrincipal userPrincipal, OutputStream outputStream) {
         String userName = userPrincipal.getName();
         List<String> certificationKeys = s3Service.listCertificationKeysByUserName(userName);
         List<String> awardKeys = voteService.isWinner(userName)
@@ -51,12 +52,10 @@ public class DocumentService {
                 : List.of();
         List<Sector> wonSectors = voteService.findWonSectorsByName(userName);
 
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-             ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             addFilesToZip(zipOutputStream, certificationKeys, null, userName);
             addFilesToZip(zipOutputStream, awardKeys, wonSectors, userName);
             zipOutputStream.finish();
-            return byteArrayOutputStream.toByteArray();
         } catch (IOException e) {
             throw new IllegalStateException("문서 압축 파일 생성에 실패했습니다.", e);
         }
@@ -76,12 +75,24 @@ public class DocumentService {
     }
 
     @Transactional
+    public CreateAwardsBySectorRes createAwardsBySector(Sector sector) {
+        List<CreateAwardsBySectorRes.CreateAwardDetailRes> awards = voteService.findWinnerNamesBySector(sector).stream()
+                .map(name -> new CreateAwardsBySectorRes.CreateAwardDetailRes(
+                        name,
+                        createDocument(name, getAwardTemplatePath(sector), DocumentType.AWARD)
+                ))
+                .toList();
+
+        return CreateAwardsBySectorRes.of(sector, awards);
+    }
+
+    @Transactional
     public void createCertificates(String name, Role role) {
         String templatePath = getCertificateTemplatePath(name, role);
         createDocument(name, templatePath, DocumentType.CERTIFICATION);
     }
 
-    private void createDocument(String name, String path, DocumentType documentType) {
+    private String createDocument(String name, String path, DocumentType documentType) {
         String imageUrl = imageGenerationService.writeOnDocument(path, name, documentType);
 
         Document document = Document.builder()
@@ -91,6 +102,7 @@ public class DocumentService {
                 .build();
 
         documentRepository.save(document);
+        return imageUrl;
     }
 
     private String getCertificateTemplatePath(String name, Role role) {
@@ -126,7 +138,7 @@ public class DocumentService {
         }
 
         List<String> awardUrls = s3Service.listAwardUrlsByUserName(userName);
-        if (!awardUrls.isEmpty()) {
+        if (!awardUrls.isEmpty() || !imageGenerationService.isImageGenerationEnabled()) {
             return awardUrls;
         }
 
@@ -144,7 +156,7 @@ public class DocumentService {
         }
 
         List<String> awardKeys = s3Service.listAwardKeysByUserName(userName);
-        if (!awardKeys.isEmpty()) {
+        if (!awardKeys.isEmpty() || !imageGenerationService.isImageGenerationEnabled()) {
             return awardKeys;
         }
 
@@ -165,7 +177,7 @@ public class DocumentService {
             String key = keys.get(i);
             ZipEntry zipEntry = new ZipEntry(resolveDownloadFileName(key, sectors, i, userName));
             zipOutputStream.putNextEntry(zipEntry);
-            zipOutputStream.write(s3Service.getFileBytes(key));
+            s3Service.writeFileToOutputStream(key, zipOutputStream);
             zipOutputStream.closeEntry();
         }
     }

@@ -1,6 +1,8 @@
 package com.likelion.last.global.external.s3;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -119,6 +122,17 @@ public class S3Service {
 
         ResponseBytes<GetObjectResponse> response = s3Client.getObjectAsBytes(getObjectRequest);
         return response.asByteArray();
+    }
+
+    public void writeFileToOutputStream(String key, OutputStream outputStream) throws IOException {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        try (ResponseInputStream<GetObjectResponse> inputStream = s3Client.getObject(getObjectRequest)) {
+            inputStream.transferTo(outputStream);
+        }
     }
 
     public void deleteFile(String key) {
